@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/04-image-generation.schema.json",
+  "title": "Agent 4 Image Generation Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "scene_id",
+    "optimized_prompt",
+    "negative_prompt",
+    "generation_config",
+    "model_notes",
+    "continuity_protection",
+    "generation_priority"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "image-generation"
+            },
+            "role": {
+              "const": "Agent 4"
+            }
+          }
+        }
+      ]
+    },
+    "scene_id": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "optimized_prompt": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "negative_prompt": {
+      "type": "string"
+    },
+    "generation_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_target",
+        "framing_priority",
+        "stylization_level",
+        "quality_preset",
+        "preserve_identity"
+      ],
+      "properties": {
+        "model_target": {
+          "$ref": "shared.schema.json#/$defs/modelTarget"
+        },
+        "framing_priority": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "stylization_level": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "quality_preset": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "preserve_identity": {
+          "type": "boolean"
+        }
+      }
+    },
+    "model_notes": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "continuity_protection": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "generation_priority": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    }
+  }
+}

@@ -1,0 +1,305 @@
+[
+  {
+    "id": "untitled-youtube-project-65f4fe3a",
+    "title": "Untitled YouTube Project",
+    "goal": "Project draft created from factory setup.",
+    "type": "Long Form / YouTube",
+    "status": "Draft",
+    "createdAt": "2026-04-07T03:18:01.131Z",
+    "updatedAt": "2026-04-07T07:13:28.155Z",
+    "templateId": null,
+    "templateSnapshot": null,
+    "review": {
+      "scenePlan": {
+        "status": "pending",
+        "approvedAt": null
+      },
+      "finalAssembly": {
+        "status": "pending",
+        "approvedAt": null
+      }
+    },
+    "references": [],
+    "script": {
+      "mode": "ai",
+      "topic": "",
+      "content": "",
+      "model": "gpt",
+      "source": "draft",
+      "updatedAt": null
+    },
+    "scenes": [],
+    "audio": {
+      "narration": {
+        "voiceId": "elevenlabs-default",
+        "language": "english",
+        "status": "draft",
+        "textPreview": "",
+        "estimatedDuration": "00:00"
+      },
+      "music": {
+        "mode": "auto",
+        "trackName": "",
+        "mood": "cinematic",
+        "generationBrief": "",
+        "uploadedTracks": [],
+        "endingFadeEnabled": true,
+        "endingFadeDuration": 2.5,
+        "dynamicVolume": true,
+        "status": "draft"
+      },
+      "sfx": {
+        "enabled": true,
+        "density": "medium",
+        "status": "draft",
+        "cues": [
+          "impact",
+          "notification",
+          "transition"
+        ]
+      },
+      "generatedAt": null
+    },
+    "captions": {
+      "status": "draft",
+      "generatedAt": null,
+      "style": {
+        "captionPosition": "center",
+        "animationStyle": "pop",
+        "animationIntensity": 62,
+        "wordByWord": true,
+        "wordHighlight": true,
+        "typography": "bold",
+        "textSize": 52,
+        "letterSpacing": 1.5,
+        "colorStyle": "violet",
+        "strokeEnabled": false,
+        "strokeWidth": 0,
+        "strokeOpacity": 0,
+        "strokeColor": "black",
+        "watermarkEnabled": false,
+        "watermarkText": "",
+        "watermarkOpacity": 0,
+        "watermarkPosition": "top-right"
+      },
+      "cues": []
+    },
+    "assembly": {
+      "status": "draft",
+      "generatedAt": null,
+      "aspectRatio": "16:9",
+      "resolution": "1920x1080",
+      "totalDurationSeconds": 0,
+      "totalDurationLabel": "00:00",
+      "readiness": {
+        "hasScenes": false,
+        "hasAudio": false,
+        "hasCaptions": false,
+        "hasVisualCoverage": false,
+        "readyToRender": false
+      },
+      "summary": {
+        "sceneCount": 0,
+        "approvedImages": 0,
+        "approvedVideos": 0,
+        "captionCueCount": 0,
+        "fallbackImages": 0,
+        "placeholders": 0,
+        "musicEnabled": false,
+        "sfxEnabled": false
+      },
+      "timeline": [],
+      "warnings": [],
+      "output": {
+        "title": "",
+        "fileName": "",
+        "format": "mp4",
+        "previewLabel": "Final Cut"
+      },
+      "history": []
+    },
+    "settings": {
+      "scriptAgentModel": "gpt",
+      "imageAgentModel": "nano-banana",
+      "videoAgentModel": "kling-3.0",
+      "voiceId": "custom-audio-upload",
+      "projectLanguage": "english",
+      "tone": "Project draft created from factory setup.",
+      "visualStyle": "",
+      "targetDuration": "Determined by script length",
+      "graphics": {
+        "focusedModuleId": "text-reveal",
+        "moduleState": {
+          "text-reveal": true,
+          "lower-third": false,
+          "stat-counter": false
+        },
+        "variantState": {
+          "text-reveal": "Viral",
+          "lower-third": "Minimal",
+          "stat-counter": "Burst"
+        }
+      },
+      "effects": {
+        "clipMode": "static",
+        "motionStyle": "vertical-pan",
+        "moduleState": {
+          "reactive-fx": true,
+          "hook-effect": false,
+          "video-ending": true
+        },
+        "videoEndingDuration": 2
+      }
+    }
+  },
+  {
+    "id": "essaie-b4cbe952",
+    "title": "Essaie",
+    "goal": "juste un essai",
+    "type": "Short Form / TikTok",
+    "status": "Draft",
+    "createdAt": "2026-04-08T03:35:37.505Z",
+    "updatedAt": "2026-04-08T03:35:52.135Z",
+    "templateId": null,
+    "templateSnapshot": null,
+    "review": {
+      "scenePlan": {
+        "status": "pending",
+        "approvedAt": null
+      },
+      "finalAssembly": {
+        "status": "pending",
+        "approvedAt": null
+      }
+    },
+    "references": [],
+    "script": {
+      "mode": "manual",
+      "topic": "",
+      "content": "",
+      "model": "gpt",
+      "source": "draft",
+      "updatedAt": null
+    },
+    "scenes": [],
+    "audio": {
+      "narration": {
+        "voiceId": "custom-audio-upload",
+        "language": "english",
+        "status": "draft",
+        "textPreview": "",
+        "estimatedDuration": "00:00"
+      },
+      "music": {
+        "mode": "auto",
+        "trackName": "",
+        "mood": "cinematic",
+        "generationBrief": "",
+        "uploadedTracks": [],
+        "endingFadeEnabled": true,
+        "endingFadeDuration": 2.5,
+        "dynamicVolume": true,
+        "status": "draft"
+      },
+      "sfx": {
+        "enabled": true,
+        "density": "medium",
+        "status": "draft",
+        "cues": []
+      },
+      "generatedAt": null
+    },
+    "captions": {
+      "status": "draft",
+      "generatedAt": null,
+      "style": {
+        "captionPosition": "center",
+        "animationStyle": "pop",
+        "animationIntensity": 62,
+        "wordByWord": true,
+        "wordHighlight": true,
+        "typography": "bold",
+        "textSize": 52,
+        "letterSpacing": 1.5,
+        "colorStyle": "purple",
+        "strokeEnabled": false,
+        "strokeWidth": 0,
+        "strokeOpacity": 0,
+        "strokeColor": "black",
+        "watermarkEnabled": false,
+        "watermarkText": "",
+        "watermarkOpacity": 0,
+        "watermarkPosition": "top-right"
+      },
+      "cues": []
+    },
+    "assembly": {
+      "status": "draft",
+      "generatedAt": null,
+      "aspectRatio": "16:9",
+      "resolution": "1920x1080",
+      "totalDurationSeconds": 0,
+      "totalDurationLabel": "00:00",
+      "readiness": {
+        "hasScenes": false,
+        "hasAudio": false,
+        "hasCaptions": false,
+        "hasVisualCoverage": false,
+        "readyToRender": false
+      },
+      "summary": {
+        "sceneCount": 0,
+        "approvedImages": 0,
+        "approvedVideos": 0,
+        "captionCueCount": 0,
+        "fallbackImages": 0,
+        "placeholders": 0,
+        "musicEnabled": false,
+        "sfxEnabled": false
+      },
+      "timeline": [],
+      "warnings": [],
+      "output": {
+        "title": "",
+        "fileName": "",
+        "format": "mp4",
+        "previewLabel": "Final Cut"
+      },
+      "history": []
+    },
+    "settings": {
+      "scriptAgentModel": "gpt",
+      "imageAgentModel": "nano-banana",
+      "videoAgentModel": "seedance-2.0",
+      "voiceId": "custom-audio-upload",
+      "projectLanguage": "english",
+      "tone": "juste un essai",
+      "narrationStyle": "",
+      "visualStyle": "juste un essai",
+      "targetDuration": "Determined by script length",
+      "graphics": {
+        "focusedModuleId": "text-reveal",
+        "moduleState": {
+          "text-reveal": true,
+          "lower-third": false,
+          "stat-counter": false
+        },
+        "variantState": {
+          "text-reveal": "Viral",
+          "lower-third": "Minimal",
+          "stat-counter": "Burst"
+        }
+      },
+      "effects": {
+        "clipMode": "static",
+        "motionStyle": "vertical-pan",
+        "moduleState": {
+          "reactive-fx": true,
+          "hook-effect": false,
+          "video-ending": true
+        },
+        "videoEndingDuration": 2
+      }
+    }
+  }
+]

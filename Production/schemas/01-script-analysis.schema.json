@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/01-script-analysis.schema.json",
+  "title": "Agent 1 Script Analysis Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "global_analysis",
+    "beat_analysis"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "script"
+            },
+            "role": {
+              "const": "Agent 1"
+            }
+          }
+        }
+      ]
+    },
+    "global_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "core_story_intent",
+        "narrative_summary",
+        "narrative_structure",
+        "emotional_arc",
+        "dominant_tone",
+        "visual_world",
+        "key_subjects",
+        "key_environments",
+        "continuity_constraints"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "core_story_intent": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "narrative_summary": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "narrative_structure": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "emotional_arc": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "dominant_tone": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "visual_world": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "key_subjects": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        },
+        "key_environments": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        },
+        "continuity_constraints": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        }
+      }
+    },
+    "beat_analysis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beat_id",
+          "beat_title",
+          "narrative_function",
+          "emotional_tone",
+          "main_subject",
+          "visible_action",
+          "environment",
+          "visual_importance",
+          "cinematic_potential",
+          "continuity_notes",
+          "scene_generation_recommendation"
+        ],
+        "properties": {
+          "beat_id": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "beat_title": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "narrative_function": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "emotional_tone": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "main_subject": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "visible_action": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "environment": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "visual_importance": {
+            "type": "string",
+            "enum": [
+              "essential-visual-scene",
+              "supporting-visual-scene",
+              "context-only",
+              "not-necessary-for-direct-visualization"
+            ]
+          },
+          "cinematic_potential": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "very-high"
+            ]
+          },
+          "continuity_notes": {
+            "$ref": "shared.schema.json#/$defs/stringArray"
+          },
+          "scene_generation_recommendation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "decision",
+              "reason"
+            ],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "generate-primary-scene",
+                  "generate-supporting-scene",
+                  "context-only",
+                  "skip-direct-visualization"
+                ]
+              },
+              "reason": {
+                "$ref": "shared.schema.json#/$defs/nonEmptyString"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

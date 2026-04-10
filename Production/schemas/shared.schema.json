@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/shared.schema.json",
+  "title": "Production Agent Shared Definitions",
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "default": []
+    },
+    "agentMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_name",
+        "role",
+        "stage"
+      ],
+      "properties": {
+        "agent_name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "role": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "stage": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "schema_version": {
+          "type": "string",
+          "default": "1.0.0"
+        }
+      }
+    },
+    "modelTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "model"
+      ],
+      "properties": {
+        "provider": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "model": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "aspect_ratio": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        }
+      }
+    },
+    "shotSuggestion": {
+      "type": "string",
+      "enum": [
+        "close-up",
+        "medium-shot",
+        "wide-shot",
+        "insert-shot",
+        "establishing-shot",
+        "reveal-shot",
+        "over-the-shoulder",
+        "detail-shot",
+        "profile-shot",
+        "aerial-shot"
+      ]
+    },
+    "motionIntensity": {
+      "type": "string",
+      "enum": [
+        "minimal",
+        "subtle",
+        "moderate",
+        "dynamic",
+        "aggressive"
+      ]
+    },
+    "priorityLevel": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    }
+  }
+}

@@ -1,0 +1,152 @@
+[
+  {
+    "id": "manikin-renders",
+    "title": "3D Manikin Renders",
+    "type": "short",
+    "description": "Blender-style manikin story recreations. Famous among Youtube Film Channels.",
+    "style": "Blender-style cinematic recreations with moody noir lighting.",
+    "params": [
+      "Short Form",
+      "Moody lighting",
+      "Fast captions",
+      "Animated camera moves"
+    ],
+    "preview": "noir",
+    "defaults": {
+      "script": {
+        "mode": "ai",
+        "topic": "Cinematic short-form crime story with mannequin characters",
+        "model": "gpt"
+      },
+      "settings": {
+        "scriptAgentModel": "gpt",
+        "imageAgentModel": "nano-banana",
+        "videoAgentModel": "kling-3.0",
+        "voiceId": "elevenlabs-default",
+        "projectLanguage": "english",
+        "tone": "dark, suspenseful, punchy",
+        "visualStyle": "Noir lighting, rainy streets, cinematic mannequin blocking",
+        "targetDuration": "Determined by script length"
+      },
+      "audio": {
+        "music": {
+          "mode": "auto",
+          "mood": "dramatic"
+        },
+        "sfx": {
+          "enabled": true,
+          "density": "medium"
+        }
+      },
+      "captions": {
+        "style": {
+          "animationStyle": "pop",
+          "colorStyle": "blue",
+          "typography": "bold",
+          "wordByWord": true,
+          "wordHighlight": true
+        }
+      }
+    }
+  },
+  {
+    "id": "horror-cartoon",
+    "title": "Horror Cartoon Style",
+    "type": "video",
+    "description": "Inspired from short-form extremely viral videos on TikTok and Youtube.",
+    "style": "Illustrated horror storytelling with pulpy character framing.",
+    "params": [
+      "YouTube Long",
+      "Stylized frames",
+      "Voice-led",
+      "Cartoon textures"
+    ],
+    "preview": "cartoon",
+    "defaults": {
+      "script": {
+        "mode": "ai",
+        "topic": "Narrated horror breakdown with cartoon framing and viral pacing",
+        "model": "gpt"
+      },
+      "settings": {
+        "scriptAgentModel": "claude",
+        "imageAgentModel": "nano-banana",
+        "videoAgentModel": "seedance-2.0",
+        "voiceId": "elevenlabs-default",
+        "projectLanguage": "english",
+        "tone": "eerie, story-driven, high retention",
+        "visualStyle": "Illustrated horror panels, exaggerated faces, pulpy shadows",
+        "targetDuration": "Determined by script length"
+      },
+      "audio": {
+        "music": {
+          "mode": "auto",
+          "mood": "cinematic"
+        },
+        "sfx": {
+          "enabled": true,
+          "density": "medium"
+        }
+      },
+      "captions": {
+        "style": {
+          "animationStyle": "slide",
+          "colorStyle": "red",
+          "typography": "bold",
+          "wordByWord": false,
+          "wordHighlight": true
+        }
+      }
+    }
+  },
+  {
+    "id": "project-template",
+    "title": "My Template",
+    "type": "video",
+    "description": "Current project specific resources and style configuration.",
+    "style": "Project-specific visual direction saved from prior work.",
+    "params": [
+      "YouTube Long",
+      "Custom assets",
+      "Reusable settings",
+      "Project-specific DNA"
+    ],
+    "preview": "empty",
+    "defaults": {
+      "script": {
+        "mode": "ai",
+        "topic": "Project-specific reusable narrative structure",
+        "model": "gpt"
+      },
+      "settings": {
+        "scriptAgentModel": "gpt",
+        "imageAgentModel": "nano-banana",
+        "videoAgentModel": "kling-3.0",
+        "voiceId": "elevenlabs-default",
+        "projectLanguage": "english",
+        "tone": "custom brand tone",
+        "visualStyle": "Reusable visual stack from previous project work",
+        "targetDuration": "Determined by script length"
+      },
+      "audio": {
+        "music": {
+          "mode": "auto",
+          "mood": "cinematic"
+        },
+        "sfx": {
+          "enabled": true,
+          "density": "medium"
+        }
+      },
+      "captions": {
+        "style": {
+          "animationStyle": "pop",
+          "colorStyle": "violet",
+          "typography": "bold",
+          "wordByWord": true,
+          "wordHighlight": true
+        }
+      }
+    }
+  }
+]

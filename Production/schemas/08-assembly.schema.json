@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/08-assembly.schema.json",
+  "title": "Agent 8 Assembly Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "project_id",
+    "readiness",
+    "warnings",
+    "timeline",
+    "render_handoff"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "assembly"
+            },
+            "role": {
+              "const": "Agent 8"
+            }
+          }
+        }
+      ]
+    },
+    "project_id": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "has_scenes",
+        "has_visual_coverage",
+        "has_audio",
+        "has_captions",
+        "ready_to_render"
+      ],
+      "properties": {
+        "has_scenes": {
+          "type": "boolean"
+        },
+        "has_visual_coverage": {
+          "type": "boolean"
+        },
+        "has_audio": {
+          "type": "boolean"
+        },
+        "has_captions": {
+          "type": "boolean"
+        },
+        "ready_to_render": {
+          "type": "boolean"
+        }
+      }
+    },
+    "warnings": {
+      "$ref": "shared.schema.json#/$defs/stringArray"
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scene_id",
+          "source_type",
+          "source_ref",
+          "duration_seconds",
+          "audio_sync_role",
+          "caption_role"
+        ],
+        "properties": {
+          "scene_id": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "placeholder"
+            ]
+          },
+          "source_ref": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "audio_sync_role": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "caption_role": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "render_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_format",
+        "aspect_ratio",
+        "resolution",
+        "audio_plan_ref",
+        "status"
+      ],
+      "properties": {
+        "output_format": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "aspect_ratio": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "resolution": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "audio_plan_ref": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "ready",
+            "ready_with_fallbacks"
+          ]
+        }
+      }
+    }
+  }
+}

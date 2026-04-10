@@ -1,0 +1,16 @@
+{
+  "name": "cosyl-video-engine",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ajv": "^8.17.1"
+  },
+  "scripts": {
+    "validate:production-schemas": "node Production/scripts/validate-schemas.js"
+  },
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "libs/*"
+  ]
+}

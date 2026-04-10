@@ -1,0 +1,94 @@
+{
+  "agent_metadata": {
+    "agent_name": "Script Director / Script Analyst",
+    "role": "Agent 1",
+    "stage": "script",
+    "schema_version": "1.0.0"
+  },
+  "global_analysis": {
+    "title": "The Last Horizon",
+    "core_story_intent": "Show a lone traveler confronting grief and finding renewed purpose at the edge of the world.",
+    "narrative_summary": "A solitary traveler reaches a cliff at sunset, reflects on what was lost, senses a turning point, and chooses to move forward.",
+    "narrative_structure": "setup -> reflective pause -> emotional reveal -> inner turning point -> resolution",
+    "emotional_arc": "melancholic to hopeful",
+    "dominant_tone": "cinematic, reflective, emotionally restrained",
+    "visual_world": "windswept coastal cliffs at golden hour with dramatic sky and strong negative space",
+    "key_subjects": [
+      "lone traveler",
+      "long coat",
+      "ocean horizon"
+    ],
+    "key_environments": [
+      "ocean cliff",
+      "sunset sky",
+      "windy coastal edge"
+    ],
+    "continuity_constraints": [
+      "keep the same traveler silhouette across all scenes",
+      "maintain golden-hour lighting progression",
+      "preserve windy cliff atmosphere and reflective emotional state"
+    ]
+  },
+  "beat_analysis": [
+    {
+      "beat_id": "beat_01",
+      "beat_title": "Arrival At The Cliff",
+      "narrative_function": "setup",
+      "emotional_tone": "quiet, melancholic",
+      "main_subject": "lone traveler",
+      "visible_action": "walking toward the edge of the cliff",
+      "environment": "windy ocean cliff at sunset",
+      "visual_importance": "essential-visual-scene",
+      "cinematic_potential": "high",
+      "continuity_notes": [
+        "traveler remains solitary",
+        "coat silhouette must stay recognizable",
+        "sky should remain warm and dramatic"
+      ],
+      "scene_generation_recommendation": {
+        "decision": "generate-primary-scene",
+        "reason": "This beat establishes the visual world, subject identity and emotional baseline."
+      }
+    },
+    {
+      "beat_id": "beat_02",
+      "beat_title": "Facing The Horizon",
+      "narrative_function": "emotional-pause",
+      "emotional_tone": "reflective",
+      "main_subject": "lone traveler",
+      "visible_action": "standing still and facing the horizon",
+      "environment": "ocean cliff with moving clouds and distant sea",
+      "visual_importance": "essential-visual-scene",
+      "cinematic_potential": "very-high",
+      "continuity_notes": [
+        "preserve negative space around the character",
+        "keep wind interaction in clothing subtle",
+        "maintain sunset palette"
+      ],
+      "scene_generation_recommendation": {
+        "decision": "generate-primary-scene",
+        "reason": "This beat carries the strongest emotional image of the sequence."
+      }
+    },
+    {
+      "beat_id": "beat_03",
+      "beat_title": "Inner Resolve",
+      "narrative_function": "turning-point",
+      "emotional_tone": "quietly hopeful",
+      "main_subject": "lone traveler",
+      "visible_action": "slight posture shift as the traveler decides to move on",
+      "environment": "same cliff edge with soft light opening in the sky",
+      "visual_importance": "supporting-visual-scene",
+      "cinematic_potential": "high",
+      "continuity_notes": [
+        "same location and same wardrobe",
+        "subtle emotional lift in lighting tone",
+        "keep the traveler identity stable"
+      ],
+      "scene_generation_recommendation": {
+        "decision": "generate-supporting-scene",
+        "reason": "This beat supports the emotional transition and provides a clear bridge to resolution."
+      }
+    }
+  ]
+}

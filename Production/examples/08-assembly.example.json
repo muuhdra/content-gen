@@ -1,0 +1,50 @@
+{
+  "agent_metadata": {
+    "agent_name": "Assembly Director",
+    "role": "Agent 8",
+    "stage": "assembly",
+    "schema_version": "1.0.0"
+  },
+  "project_id": "project_last_horizon",
+  "readiness": {
+    "has_scenes": true,
+    "has_visual_coverage": true,
+    "has_audio": true,
+    "has_captions": true,
+    "ready_to_render": true
+  },
+  "warnings": [],
+  "timeline": [
+    {
+      "scene_id": "scene_01",
+      "source_type": "image",
+      "source_ref": "approved-image-scene-01",
+      "duration_seconds": 6,
+      "audio_sync_role": "intro narration and atmosphere setup",
+      "caption_role": "opening line captions"
+    },
+    {
+      "scene_id": "scene_02",
+      "source_type": "video",
+      "source_ref": "approved-video-scene-02",
+      "duration_seconds": 7,
+      "audio_sync_role": "main emotional narration beat",
+      "caption_role": "central reflective captions"
+    },
+    {
+      "scene_id": "scene_03",
+      "source_type": "video",
+      "source_ref": "approved-video-scene-03",
+      "duration_seconds": 5,
+      "audio_sync_role": "resolution and lift",
+      "caption_role": "closing line captions"
+    }
+  ],
+  "render_handoff": {
+    "output_format": "mp4",
+    "aspect_ratio": "16:9",
+    "resolution": "1920x1080",
+    "audio_plan_ref": "audio-plan-project_last_horizon-v1",
+    "status": "ready"
+  }
+}

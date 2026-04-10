@@ -1,0 +1,22 @@
+{
+  "agent_metadata": {
+    "agent_name": "Voice Director",
+    "role": "Agent 6",
+    "stage": "narration",
+    "schema_version": "1.0.0"
+  },
+  "project_id": "project_last_horizon",
+  "voice_plan": {
+    "source_type": "preset",
+    "voice_id": "male-1",
+    "language": "english",
+    "delivery_direction": "calm, intimate, reflective delivery with restrained emotion and clean diction",
+    "pacing_profile": "slow and deliberate with emotional breathing room between thoughts",
+    "execution_mode": "generate",
+    "continuity_constraints": [
+      "keep the same voice identity across all scenes",
+      "preserve reflective tone without overacting",
+      "maintain steady pacing that supports captions and atmosphere"
+    ]
+  }
+}

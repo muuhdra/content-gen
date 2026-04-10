@@ -1,0 +1,69 @@
+{
+  "version": "1.0.0",
+  "pipeline": [
+    {
+      "order": 1,
+      "agent": "Agent 1",
+      "name": "Script Director / Script Analyst",
+      "stage": "script",
+      "schema": "./01-script-analysis.schema.json",
+      "next_stage": "scenes"
+    },
+    {
+      "order": 2,
+      "agent": "Agent 2",
+      "name": "Scene Generation Director",
+      "stage": "scenes",
+      "schema": "./02-scene-generation.schema.json",
+      "next_stage": "image-prompts"
+    },
+    {
+      "order": 3,
+      "agent": "Agent 3",
+      "name": "Cinematic Image Prompt Architect",
+      "stage": "image-prompts",
+      "schema": "./03-image-prompt.schema.json",
+      "next_stage": "image-generation"
+    },
+    {
+      "order": 4,
+      "agent": "Agent 4",
+      "name": "AI Image Generation Director",
+      "stage": "image-generation",
+      "schema": "./04-image-generation.schema.json",
+      "next_stage": "motion-video"
+    },
+    {
+      "order": 5,
+      "agent": "Agent 5",
+      "name": "Image-to-Video Motion Director",
+      "stage": "motion-video",
+      "schema": "./05-motion-video.schema.json",
+      "next_stage": "narration"
+    },
+    {
+      "order": 6,
+      "agent": "Agent 6",
+      "name": "Voice Director",
+      "stage": "narration",
+      "schema": "./06-voice-direction.schema.json",
+      "next_stage": "soundtrack"
+    },
+    {
+      "order": 7,
+      "agent": "Agent 7",
+      "name": "Music Director",
+      "stage": "soundtrack",
+      "schema": "./07-soundtrack-direction.schema.json",
+      "next_stage": "assembly"
+    },
+    {
+      "order": 8,
+      "agent": "Agent 8",
+      "name": "Assembly Director",
+      "stage": "assembly",
+      "schema": "./08-assembly.schema.json",
+      "next_stage": null
+    }
+  ]
+}

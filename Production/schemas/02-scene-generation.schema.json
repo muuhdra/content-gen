@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/02-scene-generation.schema.json",
+  "title": "Agent 2 Scene Generation Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "global_continuity",
+    "scenes"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "scenes"
+            },
+            "role": {
+              "const": "Agent 2"
+            }
+          }
+        }
+      ]
+    },
+    "global_continuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key_subjects",
+        "key_environments",
+        "continuity_constraints",
+        "scene_ordering_logic"
+      ],
+      "properties": {
+        "key_subjects": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        },
+        "key_environments": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        },
+        "continuity_constraints": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        },
+        "scene_ordering_logic": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scene_id",
+          "source_beat_ids",
+          "scene_title",
+          "narrative_purpose",
+          "emotional_tone",
+          "location_environment",
+          "main_subject",
+          "visible_action",
+          "visual_composition",
+          "shot_suggestion",
+          "continuity_notes",
+          "image_generation_notes",
+          "estimated_duration_seconds"
+        ],
+        "properties": {
+          "scene_id": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "source_beat_ids": {
+            "$ref": "shared.schema.json#/$defs/stringArray"
+          },
+          "scene_title": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "narrative_purpose": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "emotional_tone": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "location_environment": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "main_subject": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "visible_action": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "visual_composition": {
+            "$ref": "shared.schema.json#/$defs/nonEmptyString"
+          },
+          "shot_suggestion": {
+            "$ref": "shared.schema.json#/$defs/shotSuggestion"
+          },
+          "continuity_notes": {
+            "$ref": "shared.schema.json#/$defs/stringArray"
+          },
+          "image_generation_notes": {
+            "$ref": "shared.schema.json#/$defs/stringArray"
+          },
+          "estimated_duration_seconds": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

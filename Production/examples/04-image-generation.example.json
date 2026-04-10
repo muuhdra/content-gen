@@ -1,0 +1,26 @@
+{
+  "agent_metadata": {
+    "agent_name": "AI Image Generation Director",
+    "role": "Agent 4",
+    "stage": "image-generation",
+    "schema_version": "1.0.0"
+  },
+  "scene_id": "scene_02",
+  "optimized_prompt": "Cinematic wide shot, realistic lone traveler standing on a windy ocean cliff at sunset, seen from behind, facing the horizon, dramatic clouds, soft golden-hour light, melancholic atmosphere, long coat moving gently in the wind, clean silhouette, strong environmental depth, natural color palette, emotional negative space, high-detail cinematic realism",
+  "negative_prompt": "low detail, extra limbs, duplicate body parts, warped cliff, distorted face, blurry sky, cluttered composition, oversaturated light",
+  "generation_config": {
+    "model_target": {
+      "provider": "openai",
+      "model": "gpt-image-1",
+      "aspect_ratio": "16:9",
+      "format": "landscape"
+    },
+    "framing_priority": "wide emotional composition with clean horizon and readable silhouette",
+    "stylization_level": "realistic cinematic",
+    "quality_preset": "high-detail",
+    "preserve_identity": true
+  },
+  "model_notes": "Prioritize realistic lighting, stable anatomy, readable silhouette and clean horizon line.",
+  "continuity_protection": "Maintain the same traveler identity, the same coat silhouette, the same cliff mood and the same sunset palette used in adjacent scenes.",
+  "generation_priority": "Readable emotional composition first, atmospheric depth second, micro-texture third."
+}

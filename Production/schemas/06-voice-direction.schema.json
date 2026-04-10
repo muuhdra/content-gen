@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/06-voice-direction.schema.json",
+  "title": "Agent 6 Voice Direction Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "project_id",
+    "voice_plan"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "narration"
+            },
+            "role": {
+              "const": "Agent 6"
+            }
+          }
+        }
+      ]
+    },
+    "project_id": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "voice_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "voice_id",
+        "language",
+        "delivery_direction",
+        "pacing_profile",
+        "execution_mode",
+        "continuity_constraints"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "generated",
+            "uploaded",
+            "cloned",
+            "preset"
+          ]
+        },
+        "voice_id": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "language": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "delivery_direction": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "pacing_profile": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "execution_mode": {
+          "type": "string",
+          "enum": [
+            "generate",
+            "upload",
+            "keep-existing"
+          ]
+        },
+        "continuity_constraints": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        }
+      }
+    }
+  }
+}

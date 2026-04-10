@@ -1,0 +1,57 @@
+{
+  "agent_metadata": {
+    "agent_name": "Image-to-Video Motion Director",
+    "role": "Agent 5",
+    "stage": "motion-video",
+    "schema_version": "1.0.0"
+  },
+  "scene_id": "scene_02",
+  "source_context": {
+    "script_excerpt": "He stands at the edge of the cliff, staring into the horizon, carrying everything he lost in silence.",
+    "source_image_prompt": "Cinematic wide shot of a lone traveler standing still on a windy ocean cliff at sunset, seen from behind, facing the horizon, dramatic clouds, soft golden-hour light, melancholic atmosphere.",
+    "approved_image_reference": "approved-image-scene-02"
+  },
+  "scene_analysis": {
+    "narrative_purpose": "reflective emotional beat",
+    "emotional_tone": "melancholic, contemplative",
+    "main_subject": "a lone traveler on the cliff",
+    "subject_action": "standing still and absorbing the horizon",
+    "environment": "windy ocean cliff at golden hour",
+    "visual_style": "cinematic, realistic, emotionally restrained",
+    "energy_level": "low"
+  },
+  "motion_direction": {
+    "camera_movement": {
+      "type": "slow dolly in",
+      "speed": "very slow",
+      "intensity": "subtle",
+      "direction": "forward toward the subject",
+      "purpose": "deepen emotional intimacy without breaking the wide composition"
+    },
+    "subject_motion": {
+      "type": "micro body and clothing motion",
+      "intensity": "subtle",
+      "details": "gentle coat movement in the wind and a slight natural posture shift"
+    },
+    "environment_motion": {
+      "type": "wind and atmospheric drift",
+      "intensity": "subtle",
+      "details": "slow cloud drift, faint ocean motion and soft ambient wind behavior"
+    }
+  },
+  "cinematic_constraints": {
+    "preserve": [
+      "the solitude of the traveler",
+      "the wide cinematic framing",
+      "the sunset mood and horizon readability"
+    ],
+    "avoid": [
+      "fast camera movement",
+      "dramatic shake",
+      "large body gestures",
+      "major perspective shifts"
+    ]
+  },
+  "final_video_prompt": "A cinematic wide shot of a lone traveler standing on a windy ocean cliff at sunset, facing the horizon. The camera performs a very slow dolly forward, deepening emotional intimacy while preserving the original wide composition. The traveler remains mostly still, with only subtle coat movement and a slight posture shift from the wind. Clouds drift slowly, the ocean moves gently below, and the overall motion remains restrained, melancholic and cinematic.",
+  "negative_prompt": "avoid fast movement, avoid chaotic reframing, avoid exaggerated body motion, avoid geometry distortion"
+}

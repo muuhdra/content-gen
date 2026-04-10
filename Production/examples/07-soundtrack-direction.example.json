@@ -1,0 +1,25 @@
+{
+  "agent_metadata": {
+    "agent_name": "Music Director",
+    "role": "Agent 7",
+    "stage": "soundtrack",
+    "schema_version": "1.0.0"
+  },
+  "project_id": "project_last_horizon",
+  "music_plan": {
+    "mode": "generate",
+    "mood": "ambient cinematic",
+    "generation_brief": "Minimal emotional underscore with slow harmonic movement, soft texture and reflective atmosphere.",
+    "ending_strategy": "gentle fade-out that leaves emotional space after the final line",
+    "dynamic_volume": true
+  },
+  "sfx_plan": {
+    "enabled": true,
+    "density": "light",
+    "cue_focus": [
+      "coastal wind",
+      "distant ocean movement",
+      "soft atmospheric texture"
+    ]
+  }
+}

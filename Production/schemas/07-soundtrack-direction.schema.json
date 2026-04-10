@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/07-soundtrack-direction.schema.json",
+  "title": "Agent 7 Soundtrack Direction Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "project_id",
+    "music_plan",
+    "sfx_plan"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "soundtrack"
+            },
+            "role": {
+              "const": "Agent 7"
+            }
+          }
+        }
+      ]
+    },
+    "project_id": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "music_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "mood",
+        "generation_brief",
+        "ending_strategy",
+        "dynamic_volume"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "generate",
+            "uploaded",
+            "none"
+          ]
+        },
+        "mood": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "generation_brief": {
+          "type": "string"
+        },
+        "ending_strategy": {
+          "$ref": "shared.schema.json#/$defs/nonEmptyString"
+        },
+        "dynamic_volume": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sfx_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "density",
+        "cue_focus"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "density": {
+          "type": "string",
+          "enum": [
+            "none",
+            "light",
+            "balanced",
+            "heavy"
+          ]
+        },
+        "cue_focus": {
+          "$ref": "shared.schema.json#/$defs/stringArray"
+        }
+      }
+    }
+  }
+}

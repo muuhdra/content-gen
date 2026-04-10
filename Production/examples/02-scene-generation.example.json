@@ -1,0 +1,102 @@
+{
+  "agent_metadata": {
+    "agent_name": "Scene Generation Director",
+    "role": "Agent 2",
+    "stage": "scenes",
+    "schema_version": "1.0.0"
+  },
+  "global_continuity": {
+    "key_subjects": [
+      "lone traveler",
+      "long coat",
+      "ocean horizon"
+    ],
+    "key_environments": [
+      "windy ocean cliff",
+      "golden-hour sky"
+    ],
+    "continuity_constraints": [
+      "keep the same traveler silhouette in every scene",
+      "preserve coastal wind and sunset atmosphere",
+      "maintain emotional progression from grief to resolve"
+    ],
+    "scene_ordering_logic": "Start with arrival, hold on reflective stillness, then transition into subtle internal resolve."
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_01",
+      "source_beat_ids": [
+        "beat_01"
+      ],
+      "scene_title": "Arrival At The Cliff",
+      "narrative_purpose": "establish solitude, environment and emotional baseline",
+      "emotional_tone": "melancholic",
+      "location_environment": "windy ocean cliff at sunset",
+      "main_subject": "lone traveler in a long coat",
+      "visible_action": "walking toward the cliff edge",
+      "visual_composition": "wide shot with the traveler small in frame against a large sky and ocean",
+      "shot_suggestion": "establishing-shot",
+      "continuity_notes": [
+        "introduce the traveler from behind",
+        "preserve strong negative space",
+        "keep the cliff and horizon readable"
+      ],
+      "image_generation_notes": [
+        "prioritize silhouette readability",
+        "keep wind visible in coat movement",
+        "retain dramatic clouds and warm light"
+      ],
+      "estimated_duration_seconds": 6
+    },
+    {
+      "scene_id": "scene_02",
+      "source_beat_ids": [
+        "beat_02"
+      ],
+      "scene_title": "Facing The Horizon",
+      "narrative_purpose": "hold the emotional center of the story",
+      "emotional_tone": "reflective",
+      "location_environment": "same cliff edge with ocean and dramatic sky",
+      "main_subject": "lone traveler standing still",
+      "visible_action": "standing motionless and looking toward the horizon",
+      "visual_composition": "wide emotional composition with the character centered low in frame and strong sky dominance",
+      "shot_suggestion": "wide-shot",
+      "continuity_notes": [
+        "same wardrobe and same angle family",
+        "keep visual scale emotionally overwhelming",
+        "maintain sunset continuity"
+      ],
+      "image_generation_notes": [
+        "emphasize negative space",
+        "keep horizon line clean",
+        "focus on emotional scale over detail clutter"
+      ],
+      "estimated_duration_seconds": 7
+    },
+    {
+      "scene_id": "scene_03",
+      "source_beat_ids": [
+        "beat_03"
+      ],
+      "scene_title": "Inner Resolve",
+      "narrative_purpose": "signal the subtle emotional shift toward renewal",
+      "emotional_tone": "quietly hopeful",
+      "location_environment": "same cliff at the end of sunset with slightly softer sky opening",
+      "main_subject": "lone traveler preparing to move forward",
+      "visible_action": "a slight shift in posture as the traveler turns away from stillness",
+      "visual_composition": "medium-wide shot with clearer body readability while preserving the environment",
+      "shot_suggestion": "medium-shot",
+      "continuity_notes": [
+        "same location logic",
+        "same traveler identity",
+        "slight lift in light tone but not a full location change"
+      ],
+      "image_generation_notes": [
+        "show transition in posture rather than action explosion",
+        "preserve same color palette family",
+        "keep composition clean for later motion"
+      ],
+      "estimated_duration_seconds": 5
+    }
+  ]
+}

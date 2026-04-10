@@ -1,0 +1,89 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+}
+
+:root {
+  /* THEME PRODUCTION STUDIO - DARK MODE NATIVE */
+  --background: 240 17% 4%;           /* Ultra Noir (#050507) */
+  --foreground: 0 0% 100%;             /* Blanc Pur */
+  --card: 240 20% 6%;                  /* Cartes sombres (#08080c) */
+  --card-foreground: 0 0% 100%;
+  --popover: 240 20% 6%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 268 53% 37%;              /* Violet Profond Boutons (#5c2d91) */
+  --primary-foreground: 0 0% 100%;     /* Blanc sur Primaire */
+  --secondary: 240 20% 10%;            /* Noir/Gris secondaire */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 10% 12%;                /* Gris profond */
+  --muted-foreground: 0 0% 50%;        /* Gris clair text-white/50 */
+  --accent: 259 100% 71%;              /* Accent sur le Violet Néon */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;        /* Rouge Alerte */
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 10% 14%;               /* Lignes/Bordures douces */
+  --input: 240 10% 14%;                /* Inputs alignés */
+  --ring: 259 100% 71%;                /* Focus ring Violet */
+  --radius: 0.75rem;
+}
+
+/* Base adjustments for Abyss Theme */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground selection:bg-primary/30;
+    /* Retrait des gradients cyans pour un style "Studio" plus sombre et pro */
+  }
+
+  /* Universal contrast improvement for small text */
+  p, span, h1, h2, h3, h4, h5, h6 {
+    @apply antialiased subpixel-antialiased;
+  }
+}
+
+/* Specific Utilities - High Contrast Edition */
+.glass-panel, .glass, .glass-card {
+  @apply backdrop-blur-3xl border shadow-2xl;
+  background-color: hsl(240 20% 6% / 0.8);
+  border-color: hsl(0 0% 100% / 0.05);
+}
+
+.abyss-grid {
+  background-image: 
+    linear-gradient(hsl(210 40% 98% / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(210 40% 98% / 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.abyss-glow {
+  box-shadow: 0 0 40px -10px hsl(259 100% 71% / 0.3);
+}
