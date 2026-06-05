@@ -1,0 +1,22 @@
+{
+  "agent_metadata": {
+    "agent_name": "Cinematic Image Prompt Architect",
+    "role": "Agent 3",
+    "stage": "image-prompts",
+    "schema_version": "1.0.0"
+  },
+  "scene_id": "scene_02",
+  "main_prompt": "Cinematic wide shot of a lone traveler standing still on a windy ocean cliff at sunset, seen from behind, facing the horizon, dramatic clouds, soft golden-hour light, melancholic atmosphere, long coat moving gently in the wind, large negative space, emotional scale, realistic cinematic composition, deep environment depth, natural color grading",
+  "negative_prompt": "low detail, extra limbs, distorted anatomy, cluttered composition, chaotic background, oversaturated light, cartoon styling",
+  "visual_anchors": [
+    "lone traveler seen from behind",
+    "windy cliff edge",
+    "golden sunset sky",
+    "dramatic cloud mass"
+  ],
+  "continuity_indices": {
+    "lighting": "soft golden-hour backlight from the horizon, warm tones, no harsh shadows",
+    "environment_anchor_objects": "cliff edge rock silhouette, ocean below, dramatic cloud mass above",
+    "core_subject": "lone traveler in a long coat, seen from behind, small in frame"
+  }
+}

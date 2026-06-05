@@ -16,10 +16,10 @@
       "script": {
         "mode": "ai",
         "topic": "Cinematic short-form crime story with mannequin characters",
-        "model": "gpt"
+        "model": "gpt-4o"
       },
       "settings": {
-        "scriptAgentModel": "gpt",
+        "scriptAgentModel": "gpt-4o",
         "imageAgentModel": "nano-banana",
         "videoAgentModel": "kling-3.0",
         "voiceId": "elevenlabs-default",
@@ -66,7 +66,7 @@
       "script": {
         "mode": "ai",
         "topic": "Narrated horror breakdown with cartoon framing and viral pacing",
-        "model": "gpt"
+        "model": "gpt-4o"
       },
       "settings": {
         "scriptAgentModel": "claude",
@@ -100,6 +100,106 @@
     }
   },
   {
+    "id": "gelatinous-skeleton",
+    "title": "Gelatinous Skeleton",
+    "type": "short",
+    "description": "Transparent gelatin anatomy style with custom intro hook pipeline.",
+    "style": "Stylized anatomy visuals with transparent glossy materials.",
+    "params": [
+      "Short Form",
+      "Clean subject focus",
+      "Blue palette",
+      "Intro hook emphasis"
+    ],
+    "preview": "skeleton",
+    "defaults": {
+      "script": {
+        "mode": "ai",
+        "topic": "Short viral anatomy hook with surreal gelatin skeleton reveal",
+        "model": "gpt-4o"
+      },
+      "settings": {
+        "scriptAgentModel": "gpt",
+        "imageAgentModel": "kling-3.0",
+        "videoAgentModel": "kling-3.0",
+        "voiceId": "elevenlabs-default",
+        "projectLanguage": "english",
+        "tone": "curious, premium, educational",
+        "visualStyle": "Clean blue environment, translucent anatomy, premium studio framing",
+        "targetDuration": "Determined by script length"
+      },
+      "audio": {
+        "music": {
+          "mode": "auto",
+          "mood": "editorial"
+        },
+        "sfx": {
+          "enabled": true,
+          "density": "light"
+        }
+      },
+      "captions": {
+        "style": {
+          "animationStyle": "pop",
+          "colorStyle": "blue",
+          "typography": "inter",
+          "wordByWord": true,
+          "wordHighlight": true
+        }
+      }
+    }
+  },
+  {
+    "id": "course-vsl-deck",
+    "title": "Course VSL Deck",
+    "type": "slideshow",
+    "description": "Text-first slideshow template for educational VSLs, sales decks and premium explainer presentations.",
+    "style": "Editorial slide design with strong hierarchy, modern gradients and narration-led pacing.",
+    "params": [
+      "Slideshow / VSL",
+      "Text-first layout",
+      "Ken Burns fallback",
+      "Narration-led pacing"
+    ],
+    "preview": "deck",
+    "defaults": {
+      "script": {
+        "mode": "ai",
+        "topic": "Educational VSL with a clear promise, structured benefits and slide-by-slide persuasion",
+        "model": "gpt-4o"
+      },
+      "settings": {
+        "scriptAgentModel": "claude",
+        "imageAgentModel": "nano-banana",
+        "videoAgentModel": "seedance-2.0",
+        "voiceId": "elevenlabs-default",
+        "projectLanguage": "english",
+        "tone": "clear, persuasive, premium, educational",
+        "visualStyle": "Text-first presentation layout, premium diagrams, gradient accents, clean editorial spacing",
+        "targetDuration": "Determined by script length"
+      },
+      "audio": {
+        "music": {
+          "mode": "auto",
+          "mood": "editorial"
+        },
+        "sfx": {
+          "enabled": false,
+          "density": "light"
+        }
+      },
+      "captions": {
+        "style": {
+          "animationStyle": "slide",
+          "colorStyle": "violet",
+          "typography": "bold",
+          "wordByWord": false,
+          "wordHighlight": true
+        }
+      }
+    }
+  },
+  {
     "id": "project-template",
     "title": "My Template",
     "type": "video",
@@ -116,13 +216,13 @@
       "script": {
         "mode": "ai",
         "topic": "Project-specific reusable narrative structure",
-        "model": "gpt"
+        "model": "gpt-4o"
       },
       "settings": {
-        "scriptAgentModel": "gpt",
+        "scriptAgentModel": "gpt-4o",
         "imageAgentModel": "nano-banana",
-        "videoAgentModel": "kling-3.0",
-        "voiceId": "elevenlabs-default",
+        "videoAgentModel": "kling-v1.6-pro",
+        "voiceId": "elevenlabs-v3",
         "projectLanguage": "english",
         "tone": "custom brand tone",
         "visualStyle": "Reusable visual stack from previous project work",

@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState, Suspense, useCallback } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { X, Trash2, ExternalLink, ChevronRight } from "lucide-react"
 import { fetchTemplates, deleteTemplate, type TemplatePreset } from "@/lib/projects-api"
-import { applyTemplateToProjectDraft, createProjectDraft, writeProjectDraft } from "../projects/project-draft"
+import { applyTemplateToProjectDraft, createProjectDraft, writeProjectDraft } from "@/features/projects/utils/project-draft"
 
 // ── TemplatePreview (mini-render CSS fidèle) ───────────────────────────────
 
-function TemplatePreview({ preview }: { preview: TemplatePreset["preview"] }) {
+function TemplatePreview({ template }: { template: TemplatePreset }) {
+  const preview = template.preview;
   if (preview === "noir") {
     return (
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[linear-gradient(180deg,#171d2f_0%,#0b0c12_62%,#07070a_100%)]">
+      <div className="relative h-full w-full overflow-hidden border border-border bg-[linear-gradient(180deg,#171d2f_0%,#0b0c12_62%,#07070a_100%)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.18),transparent_18%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.15),transparent_18%)]" />
         <div className="absolute left-[8%] right-[8%] top-[10%] flex items-center justify-between">
           <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white/60">Crime Story</span>
@@ -23,16 +24,16 @@ function TemplatePreview({ preview }: { preview: TemplatePreset["preview"] }) {
         </div>
         <div className="absolute inset-x-[18%] bottom-0 h-[52%] rounded-t-[999px] bg-[linear-gradient(180deg,rgba(31,38,50,0.9),rgba(11,13,20,0.98))]" />
         <div className="absolute left-1/2 top-[27%] h-[16%] w-[12%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_45%_30%,#f8fafc,#b8c2d6_52%,#5b6472_100%)]" />
-        <div className="absolute left-[34%] top-[43%] h-[16%] w-[10%] rotate-[18deg] rounded-full bg-[linear-gradient(180deg,#242a38,#11131b)]" />
-        <div className="absolute right-[34%] top-[43%] h-[16%] w-[10%] -rotate-[22deg] rounded-full bg-[linear-gradient(180deg,#242a38,#11131b)]" />
-        <div className="absolute inset-x-[10%] bottom-[24%] h-[2px] bg-[linear-gradient(90deg,transparent,rgba(250,204,21,0.8),transparent)]" />
+        <div className="absolute left-[34%] top-[43%] h-[16%] w-[10%] rotate-18 rounded-full bg-[linear-gradient(180deg,#242a38,#11131b)]" />
+        <div className="absolute right-[34%] top-[43%] h-[16%] w-[10%] -rotate-22 rounded-full bg-[linear-gradient(180deg,#242a38,#11131b)]" />
+        <div className="absolute inset-x-[10%] bottom-[24%] h-0.5 bg-[linear-gradient(90deg,transparent,rgba(250,204,21,0.8),transparent)]" />
       </div>
     )
   }
 
   if (preview === "cartoon") {
     return (
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[linear-gradient(180deg,#2a2232_0%,#15131b_100%)]">
+      <div className="relative h-full w-full overflow-hidden border border-border bg-[linear-gradient(180deg,#2a2232_0%,#15131b_100%)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),transparent_25%)]" />
         <div className="absolute left-[7%] right-[7%] top-[10%] flex items-center justify-between">
           <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white/60">Animated</span>
@@ -55,7 +56,7 @@ function TemplatePreview({ preview }: { preview: TemplatePreset["preview"] }) {
 
   if (preview === "skeleton") {
     return (
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[linear-gradient(180deg,#a8ddff_0%,#79c8ff_52%,#4caaf2_100%)]">
+      <div className="relative h-full w-full overflow-hidden border border-border bg-[linear-gradient(180deg,#a8ddff_0%,#79c8ff_52%,#4caaf2_100%)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),transparent_28%),linear-gradient(180deg,transparent_0%,rgba(255,255,255,0.08)_100%)]" />
         <div className="absolute left-[8%] right-[8%] top-[10%] flex items-center justify-between">
           <span className="rounded-full border border-white/20 bg-black/15 px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white/70">Short Form</span>
@@ -65,9 +66,9 @@ function TemplatePreview({ preview }: { preview: TemplatePreset["preview"] }) {
         <div className="absolute left-[44%] top-[20%] h-[3.4%] w-[4%] rounded-full bg-[#1f2937]" />
         <div className="absolute right-[44%] top-[20%] h-[3.4%] w-[4%] rounded-full bg-[#1f2937]" />
         <div className="absolute left-1/2 top-[38%] h-[38%] w-[40%] -translate-x-1/2 rounded-t-[999px] border border-white/30 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),rgba(216,225,235,0.8)_45%,rgba(182,195,205,0.9)_100%)]" />
-        <div className="absolute left-[34%] top-[48%] h-[24%] w-[2px] rotate-[28deg] bg-white/60" />
-        <div className="absolute right-[34%] top-[48%] h-[24%] w-[2px] -rotate-[28deg] bg-white/60" />
-        <div className="absolute left-1/2 top-[60%] h-[18%] w-[2px] -translate-x-1/2 bg-white/55" />
+        <div className="absolute left-[34%] top-[48%] h-[24%] w-0.5 rotate-28 bg-white/60" />
+        <div className="absolute right-[34%] top-[48%] h-[24%] w-0.5 -rotate-28 bg-white/60" />
+        <div className="absolute left-1/2 top-[60%] h-[18%] w-0.5 -translate-x-1/2 bg-white/55" />
         <div className="absolute inset-x-[8%] bottom-[8%] rounded-[18px] border border-white/15 bg-black/15 p-3">
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white">Gel Anatomy Breakdown</p>
           <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-white/45">Clean subject • vivid blue look</p>
@@ -78,7 +79,7 @@ function TemplatePreview({ preview }: { preview: TemplatePreset["preview"] }) {
 
   if (preview === "deck") {
     return (
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[linear-gradient(180deg,#141824_0%,#0b0d14_100%)]">
+      <div className="relative h-full w-full overflow-hidden border border-border bg-[linear-gradient(180deg,#141824_0%,#0b0d14_100%)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.16),transparent_22%)]" />
         <div className="absolute left-[8%] right-[8%] top-[10%] flex items-center justify-between">
           <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white/60">VSL Deck</span>
@@ -104,15 +105,25 @@ function TemplatePreview({ preview }: { preview: TemplatePreset["preview"] }) {
     )
   }
 
+  // Default / custom (preview === "empty"): show an INFORMATIVE branded card
+  // built from the template's own type + visual style, instead of empty dots.
+  const styleLine = (template.style || "Custom production DNA").trim();
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-2xl bg-[linear-gradient(180deg,#111118_0%,#09090d_100%)]">
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:18px_18px]" />
-      <div className="absolute left-[8%] top-[10%] rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white/35">
-        Project Template
+    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden border border-border bg-[linear-gradient(140deg,#16121d_0%,#0c0a11_60%,#08070b_100%)] p-4">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,77,0,0.10),transparent_40%),radial-gradient(#ffffff08_1px,transparent_1px)] bg-size-[100%_100%,16px_16px]" />
+      <div className="relative flex items-center justify-between">
+        <span className="rounded-none border border-primary/30 bg-primary/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-primary font-mono">
+          {typeLabel[template.type] || "Template"}
+        </span>
+        <span className="text-[8px] font-black uppercase tracking-[0.18em] text-white/25 font-mono">DNA</span>
       </div>
-      <div className="absolute inset-x-[8%] bottom-[8%] rounded-[18px] border border-white/10 bg-black/20 p-3">
-        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Custom Project DNA</p>
-        <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-white/18">Assets, prompts and reusable settings</p>
+      <div className="relative">
+        <p className="text-[12px] font-black uppercase tracking-[0.14em] text-white/70 font-display leading-tight line-clamp-2">
+          {template.title}
+        </p>
+        <p className="mt-1.5 text-[9px] uppercase tracking-[0.14em] text-white/35 font-mono line-clamp-3 leading-relaxed">
+          {styleLine}
+        </p>
       </div>
     </div>
   )
@@ -124,6 +135,88 @@ const typeLabel: Record<string, string> = {
   short: "Short Form",
   video: "YouTube Video",
   slideshow: "Slideshow / VSL",
+}
+
+// ── TemplateCard (shared, fixed height, 16:9 preview) ────────────────────────
+
+function TemplateCard({
+  template,
+  isHighlighted = false,
+  onUse,
+  onPreview,
+  onDelete,
+}: {
+  template: TemplatePreset
+  isHighlighted?: boolean
+  onUse: () => void
+  onPreview: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div
+      className={`group flex flex-col overflow-hidden border transition-colors duration-300 rounded-none shadow-none
+        ${isHighlighted ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/50"}`}
+    >
+      {/* 16:9 preview — click to open the full preview */}
+      <button onClick={onPreview} className="relative block w-full" title="Aperçu">
+        <div className="relative aspect-video w-full overflow-hidden border-b border-border">
+          <TemplatePreview template={template} />
+          {/* type chip */}
+          <span className="absolute left-2 top-2 z-10 rounded-none border border-white/15 bg-black/55 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-white/80 font-mono backdrop-blur-sm">
+            {typeLabel[template.type] || "Template"}
+          </span>
+          {/* hover overlay */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <span className="flex items-center gap-2 border border-border bg-background px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-foreground font-mono">
+              <ExternalLink className="h-3 w-3" /> Aperçu
+            </span>
+          </div>
+        </div>
+      </button>
+
+      {/* Body — flex-1 so the action row aligns across all cards */}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[13px] font-black uppercase tracking-widest text-foreground leading-tight font-display">
+              {template.title}
+            </h3>
+            {template.isCustom && (
+              <span className="shrink-0 mt-0.5 border border-primary/30 bg-primary/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-primary rounded-none font-mono">
+                Créé
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground line-clamp-2 font-sans">
+            {template.description}
+          </p>
+        </div>
+
+        <div className="mt-auto flex items-center gap-2">
+          <button
+            onClick={onUse}
+            className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-[9px] font-black uppercase tracking-[0.15em] transition-colors duration-300 rounded-none font-mono"
+          >
+            Utiliser
+          </button>
+          <button
+            onClick={onPreview}
+            title="Aperçu"
+            className="h-9 w-9 rounded-none border border-border flex items-center justify-center text-muted-foreground bg-background hover:bg-primary/10 hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={onDelete}
+            title="Supprimer ce modèle"
+            className="h-9 w-9 rounded-none border border-border flex items-center justify-center text-muted-foreground bg-background hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ── Modale Preview ─────────────────────────────────────────────────────────
@@ -143,25 +236,25 @@ function PreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl rounded-[28px] border border-white/7 bg-[#08080c] overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)]"
+        className="relative w-full max-w-2xl border border-border bg-card overflow-hidden shadow-none rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Bouton fermer */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-white/40 hover:text-white hover:border-white/20 transition-all"
+          className="absolute top-4 right-4 z-10 h-8 w-8 rounded-none border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all font-mono"
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Preview agrandi */}
-        <div className="h-[300px] p-4 pb-0">
-          <div className="h-full rounded-[18px] overflow-hidden border border-white/4">
-            <TemplatePreview preview={template.preview} />
+        <div className="h-75 p-4 pb-0">
+          <div className="h-full rounded-none overflow-hidden border border-border">
+            <TemplatePreview template={template} />
           </div>
         </div>
 
@@ -169,18 +262,18 @@ function PreviewModal({
         <div className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#9b6dff]">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary font-mono">
                 {typeLabel[template.type] ?? template.type}
               </p>
-              <h3 className="text-xl font-black uppercase tracking-tight text-white mt-0.5">
+              <h3 className="text-xl font-black uppercase tracking-tight text-foreground mt-0.5 font-display">
                 {template.title}
               </h3>
-              <p className="text-[11px] text-white/40 mt-1 leading-relaxed max-w-lg">
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed max-w-lg font-mono">
                 {template.description}
               </p>
             </div>
             {template.isCustom && (
-              <span className="shrink-0 rounded-full border border-[#9b6dff]/30 bg-[#9b6dff]/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-[#9b6dff]">
+              <span className="shrink-0 bg-primary/10 border border-primary/30 text-primary px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] rounded-none font-mono">
                 Créé
               </span>
             )}
@@ -190,7 +283,7 @@ function PreviewModal({
           {template.params && template.params.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {template.params.map((p) => (
-                <span key={p} className="rounded-full border border-white/6 bg-white/2 px-3 py-1 text-[9px] font-mono text-white/30">
+                <span key={p} className="rounded-none border border-border bg-background px-3 py-1 text-[9px] font-mono text-muted-foreground">
                   {p}
                 </span>
               ))}
@@ -201,8 +294,7 @@ function PreviewModal({
           <div className="flex items-center gap-3 pt-2">
             <button
               onClick={onUse}
-              className="flex-1 h-10 rounded-xl bg-[#5c2d91] hover:bg-[#7140b4] text-white text-[10px] font-black uppercase tracking-[0.15em]
-                shadow-[0_0_15px_-5px_rgba(92,45,145,0.5)] hover:shadow-[0_0_25px_0_rgba(155,109,255,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
+              className="flex-1 h-10 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] font-black uppercase tracking-[0.15em] rounded-none font-mono transition-all duration-300 flex items-center justify-center gap-2"
             >
               Utiliser ce Modèle <ChevronRight className="h-4 w-4" />
             </button>
@@ -212,13 +304,13 @@ function PreviewModal({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onDelete}
-                    className="h-10 px-4 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 text-[9px] font-black uppercase tracking-wider hover:bg-red-500/30 transition-all"
+                    className="h-10 px-4 rounded-none bg-red-500/20 border border-red-500/40 text-red-400 text-[9px] font-black uppercase tracking-wider hover:bg-red-500/30 transition-all font-mono"
                   >
                     Confirmer
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="h-10 px-3 rounded-xl border border-white/10 text-white/40 text-[9px] font-black uppercase tracking-wider hover:border-white/20 transition-all"
+                    className="h-10 px-3 rounded-none border border-border text-muted-foreground bg-background text-[9px] font-black uppercase tracking-wider hover:border-primary/50 transition-all font-mono"
                   >
                     Annuler
                   </button>
@@ -226,7 +318,7 @@ function PreviewModal({
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="h-10 w-10 rounded-xl border border-white/6 bg-white/2 flex items-center justify-center text-white/20 hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                  className="h-10 w-10 rounded-none border border-border bg-background flex items-center justify-center text-muted-foreground hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-all"
                   title="Supprimer ce modèle"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -248,19 +340,25 @@ function TemplatesContent() {
   const [templates, setTemplates] = useState<TemplatePreset[]>([])
   const [previewTemplate, setPreviewTemplate] = useState<TemplatePreset | null>(null)
 
-  const loadTemplates = useCallback(async () => {
-    try {
-      const data = await fetchTemplates()
-      setTemplates(data)
-    } catch (error) {
-      console.error("Unable to load template catalog.", error)
+  useEffect(() => {
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const data = await fetchTemplates()
+
+        if (!cancelled) {
+          setTemplates(data)
+        }
+      } catch (error) {
+        console.error("Unable to load template catalog.", error)
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
   }, [])
-
-
-  useEffect(() => {
-    void loadTemplates()
-  }, [loadTemplates])
 
   const createdTemplateId = searchParams.get("template")
   const createdViewActive = searchParams.get("view") === "created"
@@ -275,14 +373,15 @@ function TemplatesContent() {
       return
     }
 
-    router.push(`/editor-lab?tab=audio&template=${template.id}`)
+    router.push(`/editor-lab?tab=audio&template=${template.id}&from=templates`)
   }
 
   const handleDeleteTemplate = async (templateId: string) => {
     try {
       await deleteTemplate(templateId)
       setPreviewTemplate(null)
-      void loadTemplates()
+      const data = await fetchTemplates()
+      setTemplates(data)
     } catch (error) {
       console.error("Failed to delete template.", error)
     }
@@ -297,19 +396,19 @@ function TemplatesContent() {
 
 
   return (
-    <div className="mx-auto mt-4 max-w-[1600px] space-y-10 pb-10 px-4">
+    <div className="mx-auto mt-4 max-w-7xl space-y-10 pb-10 px-4">
       {/* Header */}
-      <div className="space-y-2">
+      <div className="space-y-2 border-l-4 border-primary pl-4">
         <div className="flex items-end justify-between">
           <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9b6dff]">Template Library</p>
-            <h2 className="text-2xl font-black uppercase tracking-tight text-white">Production Templates</h2>
-            <p className="text-xs leading-relaxed text-white/40 max-w-lg">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-mono">Template Library</p>
+            <h2 className="text-3xl font-display uppercase tracking-tight text-foreground m-0">Production Templates</h2>
+            <p className="text-[13px] leading-relaxed text-muted-foreground max-w-lg mt-2 font-sans">
               Pick a template, preview its style, then launch it directly into the production workflow.
             </p>
           </div>
           {templates.length > 0 && (
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">{templates.length} templates</span>
+            <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-muted-foreground">{templates.length} templates</span>
           )}
         </div>
       </div>
@@ -318,165 +417,43 @@ function TemplatesContent() {
       {customTemplates.length > 0 ? (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-white/4" />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Mes Modèles</span>
-            <div className="h-px flex-1 bg-white/4" />
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground font-mono">Mes Modèles</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
-          <div className="grid grid-cols-1 items-start justify-items-center gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {customTemplates.map((template) => {
-              const isHighlighted = createdTemplateId === template.id
-              return (
-                <div
-                  key={template.id}
-                  className={`group w-full max-w-[360px] rounded-3xl border overflow-hidden transition-all duration-500
-                    ${isHighlighted
-                      ? 'border-[#9b6dff]/40 bg-[#9b6dff]/5 shadow-[0_0_40px_-10px_rgba(155,109,255,0.3)]'
-                      : 'border-white/4 bg-[#08080c] hover:border-[#9b6dff]/25 hover:shadow-[0_0_30px_-10px_rgba(155,109,255,0.2)]'
-                    }`}
-                >
-                  {/* Thumbnail cliquable */}
-                  <button
-                    onClick={() => openPreview(template)}
-                    className="block w-full p-3 text-left"
-                  >
-                    <div className="h-[200px] overflow-hidden rounded-2xl border border-white/4 relative group/thumb">
-                      <TemplatePreview preview={template.preview} />
-                      {/* Overlay hover preview */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-2xl">
-                        <div className="flex items-center gap-2 bg-black/60 border border-white/20 rounded-full px-4 py-2">
-                          <ExternalLink className="h-3 w-3 text-white" />
-                          <span className="text-[9px] font-black uppercase tracking-wider text-white">Aperçu</span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-
-                  <div className="px-4 pb-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="text-[13px] font-black uppercase tracking-[0.1em] text-white/90 leading-tight">{template.title}</h3>
-                        <p className="mt-1 text-[10px] leading-relaxed text-white/30 line-clamp-2">{template.description}</p>
-                      </div>
-                      <span className="shrink-0 mt-0.5 rounded-full border border-[#9b6dff]/30 bg-[#9b6dff]/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-[#9b6dff]">
-                        Créé
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* CTA principal */}
-                      <button
-                        onClick={() => handleUseTemplate(template)}
-                        className="flex-1 h-9 rounded-xl bg-[#5c2d91] hover:bg-[#7140b4] text-white text-[9px] font-black uppercase tracking-[0.15em]
-                          shadow-[0_0_15px_-5px_rgba(92,45,145,0.5)] hover:shadow-[0_0_25px_0_rgba(155,109,255,0.5)] transition-all duration-500"
-                      >
-                        Utiliser
-                      </button>
-
-                      {/* Bouton Supprimer */}
-                      <button
-                        onClick={() => openPreview(template)}
-                        className="h-9 w-9 rounded-xl border border-white/6 flex items-center justify-center text-white/20
-                          hover:border-white/10 hover:text-white/40 transition-all"
-                        title="Aperçu"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleDeleteTemplate(template.id)
-                        }}
-                        className="h-9 w-9 rounded-xl border border-white/6 flex items-center justify-center text-white/20
-                          hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                        title="Supprimer ce modèle"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {customTemplates.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                isHighlighted={createdTemplateId === template.id}
+                onUse={() => handleUseTemplate(template)}
+                onPreview={() => openPreview(template)}
+                onDelete={() => handleDeleteTemplate(template.id)}
+              />
+            ))}
           </div>
         </div>
       ) : createdViewActive ? (
-        <div className="rounded-[20px] border border-white/4 bg-[#08080c] p-8 text-center">
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Aucun modèle créé</p>
-          <p className="mt-2 text-[10px] text-white/20">
+        <div className="border border-border bg-card p-8 text-center rounded-none shadow-none">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground font-mono">Aucun modèle créé</p>
+          <p className="mt-2 text-[10px] text-muted-foreground/60 font-mono">
             Sauvegardez un projet comme modèle depuis &quot;Nouveau Projet&quot;, il apparaîtra ici.
           </p>
         </div>
       ) : null}
 
       {/* Templates standard */}
-      <div className="grid grid-cols-1 items-start justify-items-center gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {standardTemplates.map((template) => (
-          <div
+          <TemplateCard
             key={template.id}
-            className="group w-full max-w-[360px] rounded-3xl border border-white/4 bg-[#08080c] overflow-hidden
-              transition-all duration-500 hover:border-[#9b6dff]/25 hover:shadow-[0_0_35px_-10px_rgba(155,109,255,0.2)]"
-          >
-            {/* Thumbnail cliquable → ouvre la preview modale */}
-            <button
-              onClick={() => openPreview(template)}
-              className="block w-full p-3 text-left"
-            >
-              <div className="h-[200px] overflow-hidden rounded-2xl border border-white/4 relative group/thumb">
-                <TemplatePreview preview={template.preview} />
-                {/* Overlay hover */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-2xl">
-                  <div className="flex items-center gap-2 bg-black/60 border border-white/20 rounded-full px-4 py-2">
-                    <ExternalLink className="h-3 w-3 text-white" />
-                    <span className="text-[9px] font-black uppercase tracking-wider text-white">Aperçu</span>
-                  </div>
-                </div>
-              </div>
-            </button>
-
-            {/* Info */}
-            <div className="px-4 pb-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-[13px] font-black uppercase tracking-[0.1em] text-white/90 leading-tight">{template.title}</h3>
-                  <p className="mt-1 text-[10px] leading-relaxed text-white/30 line-clamp-2">{template.description}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* CTA principal */}
-                <button
-                  onClick={() => handleUseTemplate(template)}
-                  className="flex-1 h-9 rounded-xl bg-[#5c2d91] hover:bg-[#7140b4] text-white text-[9px] font-black uppercase tracking-[0.15em]
-                    shadow-[0_0_15px_-5px_rgba(92,45,145,0.5)] hover:shadow-[0_0_25px_0_rgba(155,109,255,0.5)] transition-all duration-500"
-                >
-                  Utiliser
-                </button>
-
-                {/* Bouton Aperçu */}
-                <button
-                  onClick={() => openPreview(template)}
-                  className="h-9 w-9 rounded-xl border border-white/6 flex items-center justify-center text-white/20
-                    hover:border-white/10 hover:text-white/40 transition-all"
-                  title="Aperçu"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </button>
-
-                {/* Bouton Supprimer */}
-                <button
-                  onClick={() => {
-                    handleDeleteTemplate(template.id)
-                  }}
-                  className="h-9 w-9 rounded-xl border border-white/6 flex items-center justify-center text-white/20
-                    hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                  title="Supprimer ce modèle"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
+            template={template}
+            onUse={() => handleUseTemplate(template)}
+            onPreview={() => openPreview(template)}
+            onDelete={() => handleDeleteTemplate(template.id)}
+          />
         ))}
       </div>
 
@@ -495,7 +472,7 @@ function TemplatesContent() {
 
 export default function TemplatesPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#050507]"><div className="h-8 w-8 rounded-full border-2 border-[#9b6dff] border-t-transparent animate-spin" /></div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background"><div className="h-8 w-8 rounded-none border-2 border-primary border-t-transparent animate-spin" /></div>}>
       <TemplatesContent />
     </Suspense>
   );

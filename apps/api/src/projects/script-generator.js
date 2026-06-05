@@ -1,10 +1,26 @@
-const { runScriptAgent } = require("../../../../services/agents");
+const { runScriptAgent } = require("@cosyl/agents");
 
-function generateScriptFromTopic({ topic, project, model }) {
-  const agentResult = runScriptAgent({
+async function generateScriptFromTopic({ topic, project, model, duration }) {
+  let finalProjectContext = project;
+
+  // Advance Content: ground the script in the previously-generated research
+  // brief (produced by the dedicated research engine). We do NOT re-run
+  // research here — the user triggers it explicitly via /research/generate.
+  if (project.isAdvanceContent && project.research?.brief) {
+    finalProjectContext = {
+      ...project,
+      script: {
+        ...project.script,
+        researchHandoff: project.research.brief,
+      },
+    };
+  }
+
+  const agentResult = await runScriptAgent({
     topic,
-    project,
+    project: finalProjectContext,
     model,
+    duration,
   });
 
   return {
@@ -13,6 +29,4 @@ function generateScriptFromTopic({ topic, project, model }) {
   };
 }
 
-module.exports = {
-  generateScriptFromTopic,
-};
+module.exports = { generateScriptFromTopic };

@@ -8,7 +8,10 @@ export type ProjectSettings = {
   narrationStyle?: string;
   visualStyle: string;
   targetDuration: string;
+  /** "auto" = AI assembles the final video | "manual" = export files for NLE (Capcut/DaVinci/AE) */
+  assemblyMode?: "auto" | "manual";
   graphics: {
+    enabled?: boolean;
     focusedModuleId: string;
     moduleState: Record<string, boolean>;
     variantState: Record<string, string>;
@@ -24,7 +27,7 @@ export type ProjectSettings = {
 export type ProjectReferenceAsset = {
   id: string;
   name: string;
-  kind: "reference-image";
+  kind: "reference-image" | "reference-video" | "reference-youtube";
   label: "character" | "scene" | "style" | "object";
   scopeId?: string | null;
   preview?: string | null;
@@ -128,6 +131,8 @@ export type TemplatePreset = {
     settings?: Partial<ProjectSettings>;
     audio?: Partial<ProjectAudio>;
     captions?: Partial<ProjectCaptions>;
+    /** Foundation style references (Editor Lab) carried as name+label descriptors. */
+    references?: Array<{ name: string; label: ProjectReferenceAsset["label"] }>;
   };
 };
 
@@ -149,6 +154,7 @@ export type ProjectAudio = {
     textPreview: string;
     estimatedDuration: string;
     direction?: string;
+    stemType?: string;
     generatedSource?: {
       id: string;
       name: string;
@@ -196,6 +202,15 @@ export type ProjectAudio = {
     enabled: boolean;
     density: string;
     status: string;
+    designBrief?: string;
+    generatedSource?: {
+      id: string;
+      name: string;
+      sizeLabel: string;
+      mimeType?: string;
+      storagePath?: string;
+      uploadedAt?: string;
+    } | null;
     cues: string[];
   };
   type?: "voice" | "music" | "full";
@@ -247,6 +262,8 @@ export type ProjectAssemblyTimelineItem = {
   id: string;
   sceneId: number;
   duration: number;
+  startTime?: number;
+  trackId?: string | null;
   sourceType: "video" | "image" | "placeholder";
   sourceLabel: string;
   visualDirective: string;
@@ -259,6 +276,37 @@ export type ProjectAssemblyTimelineItem = {
   textDensity?: string | null;
   pacingStrategy?: string | null;
   transition?: string | null;
+};
+
+export type ProjectAssemblyEditorClip = {
+  id: string;
+  trackId: string;
+  kind: "visual" | "caption" | "narration" | "music" | "sfx";
+  label: string;
+  startTime: number;
+  duration: number;
+  sceneId?: number | null;
+  sourceType?: ProjectAssemblyTimelineItem["sourceType"];
+  sourceLabel?: string;
+  previewText?: string | null;
+  previewImageId?: string | null;
+  accent?: string | null;
+};
+
+export type ProjectAssemblyEditorTrack = {
+  id: string;
+  label: string;
+  kind: ProjectAssemblyEditorClip["kind"];
+  accent: string;
+  items: ProjectAssemblyEditorClip[];
+};
+
+export type ProjectAssemblyEditorState = {
+  zoom: number;
+  playhead: number;
+  totalDuration: number;
+  updatedAt?: string;
+  tracks: ProjectAssemblyEditorTrack[];
 };
 
 export type ProjectAssemblyHistoryItem = {
@@ -303,6 +351,7 @@ export type ProjectAssembly = {
     previewLabel: string;
   };
   history: ProjectAssemblyHistoryItem[];
+  editor?: ProjectAssemblyEditorState | null;
   production?: ProductionSchemaPayload<AssemblyProductionOutput> | null;
 };
 
@@ -371,11 +420,29 @@ export type ProjectScene = {
   visualIntent: string;
   emotion: string;
   duration: number;
+  /** Hybrid render mode: "animate" → motion clip; "static" → Ken Burns image only. */
+  motionMode?: "animate" | "static";
   approvedImageId: string | null;
   imageVariants: ProjectImageVariant[];
   approvedVideoId: string | null;
   videoVariants: ProjectVideoVariant[];
 };
+
+/**
+ * Mirror of the backend renderValidation.sceneRequiresMotion: whether a scene
+ * needs an animated clip (true) or renders from its image / Ken Burns (false),
+ * based on the project clip mode and the per-scene motionMode (hybrid).
+ */
+export function sceneRequiresMotion(
+  project: Pick<ProjectRecord, "type" | "settings">,
+  scene: Pick<ProjectScene, "motionMode">,
+): boolean {
+  if ((project.type || "").toLowerCase().includes("slideshow")) return false;
+  const mode = project.settings?.effects?.clipMode;
+  if (mode === "static") return false;
+  if (mode === "hybrid") return scene.motionMode !== "static";
+  return true; // "video" or unset (default)
+}
 
 export type ProjectImageVariant = {
   id: string;
@@ -413,6 +480,10 @@ export type ProjectRecord = {
   review: ProjectReview;
   references?: ProjectReferenceAsset[];
   scriptLinkedReferences?: ProjectReferenceAsset[];
+  isAdvanceContent?: boolean;
+  advanceLinks?: string[];
+  advanceAssets?: ProjectReferenceAsset[];
+  research?: ProjectResearch;
   createdAt: string;
   updatedAt?: string;
   script: ProjectScript;
@@ -433,25 +504,55 @@ export type ProjectMutationPayload = {
   review?: Partial<ProjectReview>;
   references?: ProjectReferenceAsset[];
   scriptLinkedReferences?: ProjectReferenceAsset[];
+  isAdvanceContent?: boolean;
+  advanceLinks?: string[];
+  advanceAssets?: ProjectReferenceAsset[];
   script?: Partial<ProjectScript>;
-  audio?: Partial<ProjectAudio>;
+  audio?: {
+    narration?: Partial<ProjectAudio["narration"]>;
+    music?: Partial<ProjectAudio["music"]>;
+    sfx?: Partial<ProjectAudio["sfx"]>;
+    type?: ProjectAudio["type"];
+    generatedAt?: ProjectAudio["generatedAt"];
+    production?: ProjectAudio["production"];
+  };
   captions?: Partial<ProjectCaptions>;
+  assembly?: Partial<ProjectAssembly>;
   settings?: Partial<ProjectSettings>;
 };
 
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/+$/, "");
 
-export function getProjectReferencePreviewUrl(reference?: Pick<ProjectReferenceAsset, "preview" | "storagePath"> | null) {
+export function getProjectReferencePreviewUrl(
+  reference?: Pick<ProjectReferenceAsset, "preview" | "storagePath" | "uploadedAt"> | null,
+) {
   if (!reference) {
     return null;
   }
 
   if (typeof reference.storagePath === "string" && reference.storagePath.length > 0) {
-    return `${apiBaseUrl}/projects/reference-assets/file?path=${encodeURIComponent(reference.storagePath)}`;
+    const url = new URL(`${apiBaseUrl}/projects/reference-assets/file`);
+    url.searchParams.set("path", reference.storagePath);
+
+    if (typeof reference.uploadedAt === "string" && reference.uploadedAt.length > 0) {
+      url.searchParams.set("v", reference.uploadedAt);
+    }
+
+    return url.toString();
   }
 
   if (typeof reference.preview === "string" && reference.preview.length > 0) {
-    return reference.preview;
+    try {
+      const url = new URL(reference.preview);
+
+      if (typeof reference.uploadedAt === "string" && reference.uploadedAt.length > 0) {
+        url.searchParams.set("v", reference.uploadedAt);
+      }
+
+      return url.toString();
+    } catch {
+      return reference.preview;
+    }
   }
 
   return null;
@@ -483,6 +584,14 @@ export function getProjectNarrationDownloadUrl(projectId: string, download = fal
 
 export function getProjectMusicDownloadUrl(projectId: string, download = false) {
   const url = new URL(`${apiBaseUrl}/projects/${projectId}/audio/music-file`);
+  if (download) {
+    url.searchParams.set("download", "1");
+  }
+  return url.toString();
+}
+
+export function getProjectSfxDownloadUrl(projectId: string, download = false) {
+  const url = new URL(`${apiBaseUrl}/projects/${projectId}/audio/sfx-file`);
   if (download) {
     url.searchParams.set("download", "1");
   }
@@ -571,6 +680,136 @@ export async function createProject(payload: ProjectMutationPayload) {
   return response.data;
 }
 
+// ─── Research engine (Advance Content) ───────────────────────────────────────
+
+export type ResearchSource = {
+  type: "youtube" | "article";
+  url: string;
+  title?: string;
+  status: "read" | "failed";
+  chars?: number;
+  error?: string;
+};
+
+export type ProjectResearch = {
+  mode: string;
+  topic: string;
+  status: "completed" | "incomplete";
+  model: string;
+  generatedAt: string;
+  sources: ResearchSource[];
+  webSearch: {
+    ok: boolean;
+    summary: string;
+    citations: Array<{ title: string; url: string }>;
+    error: string | null;
+  };
+  brief: string;
+  error: string | null;
+} | null;
+
+export async function fetchProjectResearch(projectId: string) {
+  const response = await request<{ data: ProjectResearch }>(`/projects/${projectId}/research`);
+  return response.data;
+}
+
+export async function generateProjectResearch(projectId: string, options?: { topic?: string; model?: string }) {
+  const response = await request<{ data: NonNullable<ProjectResearch> }>(
+    `/projects/${projectId}/research/generate`,
+    {
+      method: "POST",
+      body: JSON.stringify(options ?? {}),
+    },
+  );
+  return response.data;
+}
+
+// ─── Thumbnail Studio ─────────────────────────────────────────────────────────
+
+export type ThumbnailRecord = {
+  id: string;
+  prompt: string;
+  format: "16:9" | "9:16" | "1:1";
+  model: string;
+  storagePath: string;
+  createdAt: string;
+};
+
+export function getThumbnailFileUrl(id: string, options?: { download?: boolean }) {
+  const url = new URL(`${apiBaseUrl}/thumbnails/${id}/file`);
+  if (options?.download) url.searchParams.set("download", "1");
+  return url.toString();
+}
+
+export async function fetchThumbnails() {
+  const response = await request<{ data: ThumbnailRecord[] }>("/thumbnails");
+  return response.data;
+}
+
+export async function generateThumbnail(options: { prompt: string; format: string; model?: string }) {
+  const response = await request<{ data: ThumbnailRecord }>("/thumbnails/generate", {
+    method: "POST",
+    body: JSON.stringify(options),
+  });
+  return response.data;
+}
+
+export async function deleteThumbnail(id: string) {
+  await request(`/thumbnails/${id}`, { method: "DELETE" });
+}
+
+export type ThumbnailPromptResult = {
+  prompt: string;
+  suggestedFormat: "16:9" | "9:16" | "1:1";
+  isSlideshow: boolean;
+};
+
+export async function generateProjectThumbnailPrompt(projectId: string, options?: { style?: string }) {
+  const response = await request<{ data: ThumbnailPromptResult }>(
+    `/projects/${projectId}/thumbnail-prompt`,
+    {
+      method: "POST",
+      body: JSON.stringify(options ?? {}),
+    },
+  );
+  return response.data;
+}
+
+// ---- Thumbnail reference library (persisted server-side) ----
+export type ThumbnailReferenceCategory = {
+  id: string;
+  name: string;
+};
+
+export type ThumbnailReference = {
+  id: string;
+  title: string;
+  prompt: string;
+  categoryId: string;
+  format: "16:9" | "9:16" | "1:1";
+  previewGradient: string;
+  tags: string[];
+  customImage?: string;
+};
+
+export type ThumbnailReferenceLibrary = {
+  categories: ThumbnailReferenceCategory[];
+  references: ThumbnailReference[];
+};
+
+export async function fetchThumbnailReferences() {
+  const response = await request<{ data: ThumbnailReferenceLibrary }>("/thumbnails/references");
+  return response.data;
+}
+
+export async function saveThumbnailReferences(library: ThumbnailReferenceLibrary) {
+  const response = await request<{ data: ThumbnailReferenceLibrary }>("/thumbnails/references", {
+    method: "PUT",
+    body: JSON.stringify(library),
+  });
+  return response.data;
+}
+
 export async function updateProject(projectId: string, payload: ProjectMutationPayload) {
   const response = await request<{ data: ProjectRecord }>(`/projects/${projectId}`, {
     method: "PATCH",
@@ -578,6 +817,39 @@ export async function updateProject(projectId: string, payload: ProjectMutationP
   });
 
   return response.data;
+}
+
+/** Toggle assembly mode between "auto" (AI renders final video) and "manual" (export files for NLE). */
+export async function setProjectAssemblyMode(
+  projectId: string,
+  mode: "auto" | "manual"
+) {
+  return updateProject(projectId, { settings: { assemblyMode: mode } });
+}
+
+// ---- Voice clone metadata persistence (Editor Lab) ----
+export type VoiceClone = {
+  id: string;
+  name: string;
+  sourceLabel: string;
+  createdAt?: string;
+};
+
+export async function fetchVoiceClones(): Promise<VoiceClone[]> {
+  const response = await request<{ data: VoiceClone[] }>("/voice-clones");
+  return response.data;
+}
+
+export async function saveVoiceClone(clone: Pick<VoiceClone, "id" | "name" | "sourceLabel">): Promise<VoiceClone> {
+  const response = await request<{ data: VoiceClone }>("/voice-clones", {
+    method: "POST",
+    body: JSON.stringify(clone),
+  });
+  return response.data;
+}
+
+export async function deleteVoiceClone(id: string): Promise<void> {
+  await request(`/voice-clones/${id}`, { method: "DELETE" });
 }
 
 export async function uploadProjectReferenceAsset(
@@ -713,7 +985,7 @@ export async function saveProjectScript(projectId: string, payload: { mode: Proj
   return response.data;
 }
 
-export async function generateProjectScript(projectId: string, payload: { topic: string; model?: string }) {
+export async function generateProjectScript(projectId: string, payload: { topic: string; model?: string; duration?: string }) {
   const response = await request<{ data: ProjectScript }>(`/projects/${projectId}/script/generate`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -736,8 +1008,9 @@ export async function generateProjectScenes(projectId: string) {
   return response.data;
 }
 
-export async function generateSceneImages(sceneId: string) {
-  const response = await request<{ data: ProjectScene }>(`/scenes/${sceneId}/images/generate`, {
+export async function generateSceneImages(sceneId: string, projectId?: string | null) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/scenes/${sceneId}/images/generate${qs}`, {
     method: "POST",
     body: JSON.stringify({}),
   });
@@ -745,8 +1018,9 @@ export async function generateSceneImages(sceneId: string) {
   return response.data;
 }
 
-export async function approveImageVariant(imageId: string) {
-  const response = await request<{ data: ProjectScene }>(`/images/${imageId}/approve`, {
+export async function approveImageVariant(imageId: string, projectId?: string | null) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/images/${imageId}/approve${qs}`, {
     method: "POST",
     body: JSON.stringify({}),
   });
@@ -754,8 +1028,9 @@ export async function approveImageVariant(imageId: string) {
   return response.data;
 }
 
-export async function regenerateImageVariant(imageId: string) {
-  const response = await request<{ data: ProjectScene }>(`/images/${imageId}/regenerate`, {
+export async function regenerateImageVariant(imageId: string, projectId?: string | null) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/images/${imageId}/regenerate${qs}`, {
     method: "POST",
     body: JSON.stringify({}),
   });
@@ -763,8 +1038,9 @@ export async function regenerateImageVariant(imageId: string) {
   return response.data;
 }
 
-export async function generateSceneVideos(sceneId: string) {
-  const response = await request<{ data: ProjectScene }>(`/scenes/${sceneId}/videos/generate`, {
+export async function generateSceneVideos(sceneId: string, projectId?: string | null) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/scenes/${sceneId}/videos/generate${qs}`, {
     method: "POST",
     body: JSON.stringify({}),
   });
@@ -772,8 +1048,41 @@ export async function generateSceneVideos(sceneId: string) {
   return response.data;
 }
 
-export async function approveVideoVariant(videoId: string) {
-  const response = await request<{ data: ProjectScene }>(`/videos/${videoId}/approve`, {
+export async function analyzeProjectStyle(projectId: string) {
+  const response = await request<{ data: { brief: string; cached: boolean } }>(
+    `/projects/${projectId}/style/analyze`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+  return response.data;
+}
+
+export async function setSceneMotionMode(
+  sceneId: string,
+  motionMode: "animate" | "static",
+  projectId?: string | null,
+) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/scenes/${sceneId}/motion-mode${qs}`, {
+    method: "POST",
+    body: JSON.stringify({ motionMode }),
+  });
+
+  return response.data;
+}
+
+export async function approveVideoVariant(videoId: string, projectId?: string | null) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/videos/${videoId}/approve${qs}`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+
+  return response.data;
+}
+
+export async function regenerateVideoVariant(videoId: string, projectId?: string | null) {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const response = await request<{ data: ProjectScene }>(`/videos/${videoId}/regenerate${qs}`, {
     method: "POST",
     body: JSON.stringify({}),
   });

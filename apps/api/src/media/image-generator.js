@@ -1,8 +1,8 @@
-const { runImagePromptAgent } = require("../../../../services/agents");
-const { generateImageVariant } = require("../../../../services/media/image/generateImage");
-const { buildImageGenerationHandoff } = require("../../../../services/agents/productionHandoff");
+const { runImagePromptAgent } = require("@cosyl/agents");
+const { generateImageVariant } = require("@cosyl/media/image/generateImage");
+const { buildImageGenerationHandoff } = require("@cosyl/agents/productionHandoff");
 
-function generateImageVariantsForScene(scene, project, count = 3) {
+function generateImageVariantsForScene(scene, project, count = 1) {
   const agentResult = runImagePromptAgent({ scene, project, count });
   return agentResult.output.variants.map((variant) => ({
     ...variant,
@@ -36,11 +36,16 @@ function regenerateImageVariant(scene, imageId, project) {
   }
 
   const previousVariant = scene.imageVariants[targetIndex];
-  const refreshedVariant = runImagePromptAgent({
+  // Generate a pool large enough to include the target variant index.
+  // Using Math.max(3, variantIndex) ensures we always have at least 3 variants
+  // and never access an out-of-bounds index.
+  const poolCount = Math.max(3, previousVariant.variantIndex);
+  const pool = runImagePromptAgent({
     scene,
     project,
-    count: previousVariant.variantIndex,
-  }).output.variants[previousVariant.variantIndex - 1];
+    count: poolCount,
+  }).output.variants;
+  const refreshedVariant = pool[previousVariant.variantIndex - 1] ?? pool[0];
   const nextVariant = {
     ...refreshedVariant,
     render: generateImageVariant({ scene, project, variant: refreshedVariant }),

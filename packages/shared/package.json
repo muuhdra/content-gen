@@ -1,0 +1,7 @@
+{
+  "name": "@cosyl/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared utilities, types, and database clients for COSYL Video Engine",
+  "main": "index.js"
+}

@@ -1,0 +1,38 @@
+# HTTPS overlay for a public VPS deployment.
+#
+# Adds a Caddy reverse proxy with automatic Let's Encrypt certificates and stops
+# publishing the raw api/web ports — only Caddy is exposed (80/443). The api and
+# web stay reachable on the internal Docker network (by service name) for Caddy.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
+#
+# Requires in .env:  APP_DOMAIN, API_DOMAIN, and
+#                    NEXT_PUBLIC_API_URL=https://<API_DOMAIN>
+services:
+  api:
+    # No longer published directly — reached via Caddy on the internal network.
+    ports: []
+
+  web:
+    ports: []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+      - api
+
+volumes:
+  caddy-data:
+  caddy-config:

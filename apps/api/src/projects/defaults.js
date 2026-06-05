@@ -1,4 +1,4 @@
-const { createTemplateSnapshot, getTemplateById } = require("../../../../config/templates");
+const { createTemplateSnapshot, getTemplateById } = require("@cosyl/config/templates");
 
 const courseVslDeckTemplate = getTemplateById("course-vsl-deck");
 const SCRIPT_DRIVEN_DURATION_LABEL = "Determined by script length";
@@ -23,7 +23,7 @@ const defaultProjects = [
     script: {
       mode: "ai",
       topic: "Weekly tech news roundup",
-      content: "Part 1: AI chipmakers are racing to secure the next wave of demand.\nPart 2: New consumer launches are shifting how people compare devices.\nPart 3: Regulation is starting to shape product decisions more directly.\nPart 4: The takeaway is that speed alone no longer guarantees market leadership.",
+      content: "AI chipmakers are racing to secure the next wave of demand.\nNew consumer launches are shifting how people compare devices.\nRegulation is starting to shape product decisions more directly.\nThe takeaway is that speed alone no longer guarantees market leadership.",
       model: "gpt",
       source: "generated",
       updatedAt: "2026-03-30T08:05:00.000Z",
@@ -85,7 +85,7 @@ const defaultProjects = [
     settings: {
       scriptAgentModel: "gpt",
       imageAgentModel: "nano-banana",
-      videoAgentModel: "kling-3.0",
+      videoAgentModel: "hailuo-2.3-fast",
       voiceId: "elevenlabs-default",
       projectLanguage: "english",
       tone: "energetic, informative, fast-paced",
@@ -197,7 +197,7 @@ const defaultProjects = [
     settings: {
       scriptAgentModel: "gpt",
       imageAgentModel: "kling-3.0",
-      videoAgentModel: "seedance-2.0",
+      videoAgentModel: "kling-2.5-turbo-pro",
       voiceId: "elevenlabs-default",
       projectLanguage: "english",
       tone: "uplifting, punchy, motivational",
@@ -247,7 +247,7 @@ const defaultProjects = [
     script: {
       mode: "ai",
       topic: "Marketing course opening sequence",
-      content: "Part 1: Most creators do not fail because they lack information.\nPart 2: They fail because they do not have a clear system.\nPart 3: This course turns scattered tactics into a repeatable content engine.",
+      content: "Most creators do not fail because they lack information.\nThey fail because they do not have a clear system.\nThis course turns scattered tactics into a repeatable content engine.",
       model: "claude",
       source: "generated",
       updatedAt: "2026-03-18T08:10:00.000Z",
@@ -309,7 +309,7 @@ const defaultProjects = [
     settings: {
       scriptAgentModel: "claude",
       imageAgentModel: "nano-banana",
-      videoAgentModel: "seedance-2.0",
+      videoAgentModel: "kling-2.5-turbo-pro",
       voiceId: "elevenlabs-default",
       projectLanguage: "english",
       tone: "clear, educational, persuasive",

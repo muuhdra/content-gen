@@ -1,3 +1,5 @@
+const { DEFAULT_TEMPLATES } = require("@cosyl/config/templates");
+
 function mapTemplateRow(row) {
   return {
     id: row.id,
@@ -42,7 +44,28 @@ function createSupabaseTemplatesStore(client) {
         throw new Error(error.message);
       }
 
-      return data.map(mapTemplateRow);
+      // First run on a fresh Supabase project: seed the built-in templates so the
+      // library is never empty (the file store seeds these locally; Supabase does not).
+      if (!data || data.length === 0) {
+        const seeded = await this.seedDefaults();
+        if (seeded.length > 0) return seeded;
+      }
+
+      return (data || []).map(mapTemplateRow);
+    },
+
+    async seedDefaults() {
+      const rows = DEFAULT_TEMPLATES.map(mapTemplatePayload);
+      const { data, error } = await client
+        .from("templates")
+        .upsert(rows, { onConflict: "id" })
+        .select("*");
+
+      if (error) {
+        // Seeding is best-effort — never block listing on a seed failure.
+        return [];
+      }
+      return (data || []).map(mapTemplateRow);
     },
 
     async getTemplate(templateId) {

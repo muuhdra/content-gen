@@ -1,0 +1,7 @@
+{
+  "name": "@cosyl/factory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Factory Engine: Directors, skills, and schemas for COSYL Video Engine",
+  "main": "index.js"
+}

@@ -1,21 +1,9 @@
 const express = require("express");
 const { createTemplatesRepository } = require("./repository");
+const { withErrorHandling } = require("../lib/http");
 
 const router = express.Router();
 const templatesRepository = createTemplatesRepository();
-
-function withErrorHandling(handler) {
-  return async (req, res) => {
-    try {
-      await handler(req, res);
-    } catch (error) {
-      console.error("API error:", error);
-      res.status(500).json({
-        error: error instanceof Error ? error.message : "Unexpected server error",
-      });
-    }
-  };
-}
 
 router.get("/", withErrorHandling(async (_req, res) => {
   const templates = await templatesRepository.listTemplates();

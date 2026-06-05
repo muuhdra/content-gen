@@ -1,0 +1,28 @@
+# Dependencies (reinstalled inside the image via npm ci)
+node_modules
+**/node_modules
+
+# Build output (web is rebuilt inside the image)
+.next
+**/.next
+out
+**/out
+
+# Local runtime data & generated media (provided by a mounted volume at runtime)
+apps/api/data
+
+# Secrets (injected at runtime via env_file / environment)
+.env
+.env.*
+!.env.example
+
+# VCS & tooling
+.git
+.gitignore
+*.log
+.DS_Store
+_bmad
+
+# Editor
+.vscode
+.idea

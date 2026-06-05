@@ -1,5 +1,5 @@
 const { readTemplates, writeTemplates } = require("./store");
-const { createSupabaseAdminClient } = require("../../../../libs/db/supabase");
+const { createSupabaseAdminClient } = require("@cosyl/shared/db/supabase");
 const { createSupabaseTemplatesStore } = require("./supabase-store");
 
 function createFileTemplatesStore() {

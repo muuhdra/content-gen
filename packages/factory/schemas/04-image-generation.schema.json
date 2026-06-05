@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://content-gen.local/production/schemas/04-image-generation.schema.json",
+  "title": "Agent 4 Image Generation Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_metadata",
+    "scene_id",
+    "optimized_prompt",
+    "negative_prompt",
+    "model_notes",
+    "continuity_protection",
+    "generation_priority",
+    "framing_protection",
+    "staging_protection",
+    "animation_readiness",
+    "failure_risk_notes"
+  ],
+  "properties": {
+    "agent_metadata": {
+      "allOf": [
+        {
+          "$ref": "shared.schema.json#/$defs/agentMetadata"
+        },
+        {
+          "properties": {
+            "stage": {
+              "const": "image-generation"
+            },
+            "role": {
+              "const": "Agent 4"
+            }
+          }
+        }
+      ]
+    },
+    "scene_id": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "optimized_prompt": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "negative_prompt": {
+      "type": "string"
+    },
+    "model_notes": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "continuity_protection": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "generation_priority": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "framing_protection": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "staging_protection": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "animation_readiness": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    },
+    "failure_risk_notes": {
+      "$ref": "shared.schema.json#/$defs/nonEmptyString"
+    }
+  }
+}

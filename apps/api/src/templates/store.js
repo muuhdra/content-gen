@@ -1,9 +1,10 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
-const { DEFAULT_TEMPLATES } = require("../../../../config/templates");
+const { DEFAULT_TEMPLATES } = require("@cosyl/config/templates");
+const { dataRoot } = require("../lib/paths");
 
-const dataDirectory = path.join(__dirname, "..", "..", "data");
+const dataDirectory = dataRoot;
 const templatesFile = path.join(dataDirectory, "templates.json");
 
 async function ensureTemplatesFile() {

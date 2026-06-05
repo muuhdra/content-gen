@@ -1,16 +1,19 @@
 {
   "name": "@cosyl/api",
   "version": "1.0.0",
-  "description": "COSYL Video Engine API",
-  "main": "src/index.js",
+  "private": true,
+  "description": "COSYL Video Engine API Server",
+  "main": "index.js",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "dev": "node index.js",
+    "start": "node index.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
-    "bullmq": "^5.58.0",
-    "express": "^4.21.0",
-    "ioredis": "^5.7.0"
+    "@cosyl/agents": "*",
+    "@cosyl/config": "*",
+    "@cosyl/factory": "*",
+    "@cosyl/media": "*",
+    "@cosyl/orchestrator": "*",
+    "@cosyl/shared": "*"
   }
 }

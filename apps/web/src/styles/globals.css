@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-destructive: hsl(var(--destructive));
+  
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+  --radius-xl: 0rem;
+
+  --font-mono: var(--font-mono-family);
+  --font-display: var(--font-display-family);
+  --font-sans: var(--font-sans-family);
+}
+
+:root {
+  /* THEME CINEMATIC STUDIO - INDUSTRIAL BRUTALIST */
+  --background: 240 10% 2%;           /* True Deep Space Black */
+  --foreground: 0 0% 98%;             /* Sharp White */
+  --card: 240 5% 5%;                  /* Tungsten Metal */
+  --card-foreground: 0 0% 98%;
+  --popover: 240 5% 5%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 15 100% 50%;             /* Hyper Orange (#FF3300) - Action primaire */
+  --primary-foreground: 0 0% 100%;    /* Blanc sur Primaire */
+  --secondary: 240 5% 10%;            /* Noir/Gris froid industriel */
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 5% 12%;                /* Gris profond technique */
+  --muted-foreground: 240 5% 65%;     /* Gris technique lisible */
+  --accent: 15 100% 50%;              /* Pareil que primaire pour consistance HUD */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;           /* Rouge Alerte */
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5% 11%;               /* Bordures discrètes (les cadres s'effacent) */
+  --input: 240 5% 9%;                 /* Inputs très sombres */
+  --ring: 15 100% 50%;                /* Focus ring Orange Industriel */
+  --radius: 0rem;                     /* SHARP EDGES ONLY */
+  --font-mono-family: "JetBrains Mono", "SFMono-Regular", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-display-family: "Bricolage Grotesque", "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  --font-sans-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Base adjustments for Industrial Theme */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground selection:bg-primary/30;
+  }
+
+  /* Universal contrast improvement + force aggressive styling for headings */
+  p, span {
+    @apply antialiased font-mono;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply antialiased font-display tracking-tight uppercase;
+  }
+}
+
+/* Surfaces — calm elevated panels: a touch of lift, a whisper of a border. */
+.glass-panel, .glass, .technical-card, .glass-card {
+  @apply border;
+  background-color: hsl(240 6% 7%);
+  border-color: hsl(240 5% 13%);
+}
+
+/* Background texture — barely-there, just enough to avoid a flat void. */
+.abyss-grid, .technical-grid {
+  background-image:
+    linear-gradient(hsl(240 5% 30% / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(240 5% 30% / 0.025) 1px, transparent 1px);
+  background-size: 120px 120px;
+}
+
+.abyss-glow, .technical-glow {
+  box-shadow: 0 0 40px -10px hsl(15 100% 50% / 0.12);
+}

@@ -5,13 +5,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Palette,
-  Type,
-  Sparkles,
+  Image as ImageIcon,
+  FileText,
+  Wand2,
   ArrowLeft,
   Save,
-  Music,
-  Layers
+  Mic
 } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -21,32 +20,82 @@ import {
   fetchProject,
   updateProject,
   type ProjectCaptionStyle,
-  type ProjectMutationPayload,
   type ProjectRecord,
+  type ProjectReferenceAsset,
 } from "@/lib/projects-api"
 
 // Modular Components
-import { VisualsLab } from "./visual-lab/VisualsLab"
-import { CaptionsLab } from "./caption-lab/CaptionsLab"
-import { defaultCaptionLabPreset, type CaptionLabPreset } from "./caption-lab/caption-lab-preset"
-import { GraphicsLab } from "./graphic-lab/GraphicsLab"
-import { defaultGraphicsLabPreset, type GraphicsLabPreset } from "./graphic-lab/graphics-lab-preset"
-import { EffectsLab } from "./effect-lab/EffectsLab"
-import { defaultEffectsLabPreset, type EffectsLabPreset } from "./effect-lab/effects-lab-preset"
-import { AudioLab } from "./audio-lab/AudioLab"
-import { defaultMusicLabPreset, type MusicLabPreset } from "./audio-lab/music/music-lab-preset"
-import { defaultSoundsLabPreset, type SoundsLabPreset } from "./audio-lab/sounds/sounds-lab-preset"
-import { CUSTOM_AUDIO_UPLOAD_ID, isCustomVoiceId } from "./audio-lab/narration/voice-cloning-lab/voice-clone-storage"
-import { EditorLabContext } from "./editor-lab-context"
-import { createProjectDraft, readProjectDraft, writeProjectDraft, type ProjectDraft, type ProjectType } from "../projects/project-draft"
+import { VisualsLab } from "@/features/editor-lab/components/visual-lab/VisualsLab"
+import { CaptionsLab } from "@/features/editor-lab/components/caption-lab/CaptionsLab"
+import { defaultCaptionLabPreset, type CaptionLabPreset } from "@/features/editor-lab/components/caption-lab/caption-lab-preset"
+import { defaultGraphicsLabPreset, type GraphicsLabPreset } from "@/features/editor-lab/components/graphic-lab/graphics-lab-preset"
+import { EffectsLab } from "@/features/editor-lab/components/effect-lab/EffectsLab"
+import { defaultEffectsLabPreset, type EffectsLabPreset } from "@/features/editor-lab/components/effect-lab/effects-lab-preset"
+import { AudioLab } from "@/features/editor-lab/components/audio-lab/AudioLab"
+import { defaultMusicLabPreset, type MusicLabPreset } from "@/features/editor-lab/components/audio-lab/music/music-lab-preset"
+import { defaultSoundsLabPreset, type SoundsLabPreset } from "@/features/editor-lab/components/audio-lab/sounds/sounds-lab-preset"
+import { CUSTOM_AUDIO_UPLOAD_ID, isCustomVoiceId } from "@/features/editor-lab/components/audio-lab/narration/voice-cloning-lab/voice-clone-storage"
+import { EditorLabContext } from "@/features/editor-lab/editor-lab-context"
+import { createProjectDraft, readProjectDraft, writeProjectDraft, type ProjectDraft, type ProjectType } from "@/features/projects/utils/project-draft"
+import { buildProjectPayload } from "@/features/projects/utils/project-payload"
+import type { CaptionPosition } from "@/features/editor-lab/components/caption-lab/caption-lab-preset"
 
-const projectTypeLabels: Record<Exclude<ProjectDraft["projectType"], null>, string> = {
-  short: "Short Form",
-  video: "YouTube Video",
-  slideshow: "Slideshow / VSL",
+
+const editorLabTabs = ["visuals", "captions", "effects", "audio"] as const;
+const editorLabOrigins = ["setup", "templates", "production", "project"] as const;
+
+type EditorLabTab = (typeof editorLabTabs)[number];
+type EditorLabOrigin = (typeof editorLabOrigins)[number];
+
+function isEditorLabTab(value: string | null | undefined): value is EditorLabTab {
+  return typeof value === "string" && editorLabTabs.includes(value as EditorLabTab);
 }
 
-const SCRIPT_DRIVEN_DURATION_LABEL = "Determined by script length";
+function isEditorLabOrigin(value: string | null | undefined): value is EditorLabOrigin {
+  return typeof value === "string" && editorLabOrigins.includes(value as EditorLabOrigin);
+}
+
+function isCaptionPosition(value: string | undefined): value is CaptionPosition {
+  return value === "top" || value === "center" || value === "bottom" || value === "custom";
+}
+
+type GraphicsPresetInput = Partial<GraphicsLabPreset> | {
+  enabled?: boolean;
+  focusedModuleId?: string;
+  moduleState?: Record<string, boolean>;
+  variantState?: Record<string, string>;
+} | null | undefined;
+
+type EffectsPresetInput = Partial<EffectsLabPreset> | {
+  clipMode?: string;
+  motionStyle?: string;
+  moduleState?: Record<string, boolean>;
+  videoEndingDuration?: number;
+} | null | undefined;
+
+type MusicPresetInput = Partial<MusicLabPreset> | {
+  mode?: string;
+  mood?: string;
+  generationBrief?: string;
+  uploadedTracks?: Array<{
+    id: string;
+    name: string;
+    sizeLabel?: string;
+    mimeType?: string;
+    storagePath?: string;
+    uploadedAt?: string;
+  }>;
+  endingFadeEnabled?: boolean;
+  endingFadeDuration?: number;
+  dynamicVolume?: boolean;
+} | null | undefined;
+
+type SoundsPresetInput = Partial<SoundsLabPreset> | {
+  enabled?: boolean;
+  density?: string;
+  cueFocus?: string[];
+  cues?: string[];
+} | null | undefined;
 
 function inferProjectType(typeLabel: string): ProjectType {
   const normalized = typeLabel.toLowerCase();
@@ -62,45 +111,11 @@ function inferProjectType(typeLabel: string): ProjectType {
   return "video";
 }
 
-function deriveProjectTitle(projectDraft: ProjectDraft) {
-  if (projectDraft.projectTitle.trim().length > 0) {
-    return projectDraft.projectTitle.trim();
-  }
 
-  if (projectDraft.templateTitle) {
-    return projectDraft.templateTitle;
-  }
-
-  if (projectDraft.projectType === "short") {
-    return "Untitled Short Project";
-  }
-
-  if (projectDraft.projectType === "slideshow") {
-    return "Untitled Slideshow / VSL Project";
-  }
-
-  return "Untitled YouTube Project";
-}
-
-function deriveProjectTypeLabel(projectType: ProjectType) {
-  if (projectType === "short") {
-    return "Short Form / TikTok";
-  }
-
-  if (projectType === "slideshow") {
-    return "Slideshow / VSL";
-  }
-
-  return "Long Form / YouTube";
-}
-
-function deriveTargetDuration(_projectType: ProjectType) {
-  return SCRIPT_DRIVEN_DURATION_LABEL;
-}
 
 function normalizeSelectedVoice(voiceId?: string | null) {
   if (!voiceId || voiceId === "elevenlabs-default") {
-    return "male-1";
+    return "elevenlabs-v3";
   }
 
   return voiceId;
@@ -136,14 +151,15 @@ function createDraftFromProject(project: ProjectRecord): ProjectDraft {
   });
 }
 
-function normalizeGraphicsPreset(input?: Partial<GraphicsLabPreset> | null): GraphicsLabPreset {
+function normalizeGraphicsPreset(input?: GraphicsPresetInput): GraphicsLabPreset {
   return {
     ...defaultGraphicsLabPreset,
     ...input,
+    enabled: typeof input?.enabled === "boolean" ? input.enabled : defaultGraphicsLabPreset.enabled,
     focusedModuleId:
       input?.focusedModuleId === "text-reveal" ||
-      input?.focusedModuleId === "lower-third" ||
-      input?.focusedModuleId === "stat-counter"
+        input?.focusedModuleId === "lower-third" ||
+        input?.focusedModuleId === "stat-counter"
         ? input.focusedModuleId
         : defaultGraphicsLabPreset.focusedModuleId,
     moduleState: {
@@ -157,11 +173,11 @@ function normalizeGraphicsPreset(input?: Partial<GraphicsLabPreset> | null): Gra
   };
 }
 
-function normalizeEffectsPreset(input?: Partial<EffectsLabPreset> | null): EffectsLabPreset {
+function normalizeEffectsPreset(input?: EffectsPresetInput): EffectsLabPreset {
   return {
     ...defaultEffectsLabPreset,
     ...input,
-    clipMode: input?.clipMode === "video" ? "video" : "static",
+    clipMode: input?.clipMode === "video" || input?.clipMode === "hybrid" ? input.clipMode : "static",
     motionStyle:
       input?.motionStyle === "horizontal-pan" || input?.motionStyle === "zoom-in-out"
         ? input.motionStyle
@@ -175,16 +191,16 @@ function normalizeEffectsPreset(input?: Partial<EffectsLabPreset> | null): Effec
   };
 }
 
-function normalizeMusicPreset(input?: Partial<MusicLabPreset> | null): MusicLabPreset {
+function normalizeMusicPreset(input?: MusicPresetInput): MusicLabPreset {
   return {
     ...defaultMusicLabPreset,
     ...input,
     mode: input?.mode === "uploaded" ? "uploaded" : "ai",
     mood:
       input?.mood === "uplifting" ||
-      input?.mood === "dark" ||
-      input?.mood === "editorial" ||
-      input?.mood === "ambient"
+        input?.mood === "dark" ||
+        input?.mood === "editorial" ||
+        input?.mood === "ambient"
         ? input.mood
         : defaultMusicLabPreset.mood,
     generationBrief:
@@ -193,18 +209,18 @@ function normalizeMusicPreset(input?: Partial<MusicLabPreset> | null): MusicLabP
         : defaultMusicLabPreset.generationBrief,
     uploadedTracks: Array.isArray(input?.uploadedTracks)
       ? input.uploadedTracks
-          .filter(
-            (track): track is NonNullable<typeof input.uploadedTracks>[number] =>
-              Boolean(track && typeof track.id === "string" && typeof track.name === "string"),
-          )
-          .map((track) => ({
-            id: track.id,
-            name: track.name,
-            sizeLabel: typeof track.sizeLabel === "string" ? track.sizeLabel : "Unknown size",
-            mimeType: typeof track.mimeType === "string" ? track.mimeType : undefined,
-            storagePath: typeof track.storagePath === "string" ? track.storagePath : undefined,
-            uploadedAt: typeof track.uploadedAt === "string" ? track.uploadedAt : undefined,
-          }))
+        .filter(
+          (track): track is NonNullable<typeof input.uploadedTracks>[number] =>
+            Boolean(track && typeof track.id === "string" && typeof track.name === "string"),
+        )
+        .map((track) => ({
+          id: track.id,
+          name: track.name,
+          sizeLabel: typeof track.sizeLabel === "string" ? track.sizeLabel : "Unknown size",
+          mimeType: typeof track.mimeType === "string" ? track.mimeType : undefined,
+          storagePath: typeof track.storagePath === "string" ? track.storagePath : undefined,
+          uploadedAt: typeof track.uploadedAt === "string" ? track.uploadedAt : undefined,
+        }))
       : defaultMusicLabPreset.uploadedTracks,
     endingFadeEnabled:
       typeof input?.endingFadeEnabled === "boolean"
@@ -221,7 +237,11 @@ function normalizeMusicPreset(input?: Partial<MusicLabPreset> | null): MusicLabP
   };
 }
 
-function normalizeSoundsPreset(input?: Partial<SoundsLabPreset> | null): SoundsLabPreset {
+function normalizeSoundsPreset(input?: SoundsPresetInput): SoundsLabPreset {
+  const fallbackCueList = input && typeof input === "object" && "cues" in input
+    ? input.cues
+    : undefined;
+
   return {
     ...defaultSoundsLabPreset,
     ...input,
@@ -230,12 +250,14 @@ function normalizeSoundsPreset(input?: Partial<SoundsLabPreset> | null): SoundsL
         ? input.enabled
         : defaultSoundsLabPreset.enabled,
     density:
-      input?.density === "none" || input?.density === "light" || input?.density === "dense"
+      input?.density === "none" || input?.density === "light" || input?.density === "dense" || input?.density === "medium"
         ? input.density
         : defaultSoundsLabPreset.density,
     cueFocus: Array.isArray(input?.cueFocus)
       ? input.cueFocus.filter((cue): cue is string => typeof cue === "string")
-      : defaultSoundsLabPreset.cueFocus,
+      : Array.isArray(fallbackCueList)
+        ? fallbackCueList.filter((cue): cue is string => typeof cue === "string")
+        : defaultSoundsLabPreset.cueFocus,
   };
 }
 
@@ -243,198 +265,32 @@ function getEditorLabScopeKey(projectId: string | null | undefined) {
   return projectId || "draft";
 }
 
-function areStringListsEqual(left: string[] | undefined, right: string[] | undefined) {
-  const leftList = Array.isArray(left) ? left : [];
-  const rightList = Array.isArray(right) ? right : [];
-
-  if (leftList.length !== rightList.length) {
-    return false;
-  }
-
-  return leftList.every((item, index) => item === rightList[index]);
-}
-
-function areUploadedTracksEqual(
-  left: Array<{ id: string; name: string; sizeLabel: string; storagePath?: string; mimeType?: string }> | undefined,
-  right: Array<{ id: string; name: string; sizeLabel: string; storagePath?: string; mimeType?: string }> | undefined,
-) {
-  const leftList = Array.isArray(left) ? left : [];
-  const rightList = Array.isArray(right) ? right : [];
-
-  if (leftList.length !== rightList.length) {
-    return false;
-  }
-
-  return leftList.every((track, index) => {
-    const candidate = rightList[index];
-    return Boolean(candidate)
-      && candidate.id === track.id
-      && candidate.name === track.name
-      && candidate.sizeLabel === track.sizeLabel
-      && (candidate.storagePath || "") === (track.storagePath || "")
-      && (candidate.mimeType || "") === (track.mimeType || "");
-  });
-}
-
-function buildProjectPayload({
-  projectDraft,
-  projectRecord,
-  captionPreset,
-  musicPreset,
-  soundsPreset,
-  graphicsPreset,
-  effectsPreset,
-  visualStyle,
-  references,
-  narrationLanguage,
-  selectedVoice,
-  narrationStyle,
+function buildEditorLabUrl({
+  projectId,
+  activeTab,
+  origin,
 }: {
-  projectDraft: ProjectDraft;
-  projectRecord: ProjectRecord | null;
-  captionPreset: CaptionLabPreset;
-  musicPreset: MusicLabPreset;
-  soundsPreset: SoundsLabPreset;
-  graphicsPreset: GraphicsLabPreset;
-  effectsPreset: EffectsLabPreset;
-  visualStyle: string;
-  references: ProjectRecord["references"];
-  narrationLanguage: string;
-  selectedVoice: string;
-  narrationStyle: string;
-}): ProjectMutationPayload {
-  const currentNarration = projectRecord?.audio?.narration;
-  const currentMusic = projectRecord?.audio?.music;
-  const currentSfx = projectRecord?.audio?.sfx;
-  const narrationChanged =
-    currentNarration?.voiceId !== selectedVoice ||
-    currentNarration?.language !== narrationLanguage ||
-    (currentNarration?.direction || projectRecord?.settings?.narrationStyle || "") !== narrationStyle;
-  const uploadOnlyNarrationSelected = selectedVoice === CUSTOM_AUDIO_UPLOAD_ID;
-  const preservedUploadedSource = uploadOnlyNarrationSelected ? currentNarration?.uploadedSource || null : null;
-  const keepUploadedNarrationSnapshot = uploadOnlyNarrationSelected && Boolean(preservedUploadedSource);
-  const nextMusicMode = musicPreset.mode === "uploaded" ? "uploaded" : "auto";
-  const uploadedTrackNames = musicPreset.uploadedTracks.map((track) => track.name).join(", ");
-  const musicChanged =
-    currentMusic?.mode !== nextMusicMode ||
-    currentMusic?.mood !== musicPreset.mood ||
-    (currentMusic?.generationBrief || "") !== musicPreset.generationBrief ||
-    !areUploadedTracksEqual(currentMusic?.uploadedTracks, musicPreset.uploadedTracks) ||
-    Boolean(currentMusic?.endingFadeEnabled) !== musicPreset.endingFadeEnabled ||
-    (currentMusic?.endingFadeDuration ?? 2.5) !== musicPreset.endingFadeDuration ||
-    Boolean(currentMusic?.dynamicVolume) !== musicPreset.dynamicVolume;
-  const sfxChanged =
-    Boolean(currentSfx?.enabled) !== soundsPreset.enabled ||
-    (currentSfx?.density || "light") !== soundsPreset.density ||
-    !areStringListsEqual(currentSfx?.cues, soundsPreset.cueFocus);
-  const nextNarrationStatus = narrationChanged
-    ? keepUploadedNarrationSnapshot
-      ? "uploaded"
-      : "draft"
-    : currentNarration?.status || "draft";
-  const nextMusicStatus = musicChanged ? "draft" : currentMusic?.status || "draft";
-  const nextSfxStatus = sfxChanged ? "draft" : currentSfx?.status || "draft";
-  const nextAudioGeneratedAt =
-    narrationChanged || musicChanged || sfxChanged
-      ? null
-      : projectRecord?.audio?.generatedAt || null;
+  projectId: string;
+  activeTab: string;
+  origin: EditorLabOrigin;
+}) {
+  const params = new URLSearchParams({
+    projectId,
+    tab: activeTab,
+    from: origin,
+  });
 
-  return {
-    title: deriveProjectTitle(projectDraft),
-    goal: projectDraft.projectDescription.trim().length > 0
-      ? projectDraft.projectDescription.trim()
-      : projectDraft.projectTone.trim().length > 0
-        ? projectDraft.projectTone.trim()
-        : projectDraft.projectContext.trim().length > 0
-          ? projectDraft.projectContext.trim()
-        : "Project configured from Editor Lab.",
-    type: deriveProjectTypeLabel(projectDraft.projectType),
-    status: "Draft",
-    templateId: projectDraft.template,
-    references,
-    script: {
-      mode: projectDraft.scriptStrategy,
-      topic: projectDraft.scriptTopic,
-      content: projectDraft.scriptStrategy === "manual" ? projectDraft.manualScript : "",
-      model: projectDraft.scriptAgentModel,
-      source: projectDraft.scriptStrategy === "manual" ? "manual" : "draft",
-      updatedAt: null,
-    },
-    audio: {
-      ...(projectRecord?.audio || {}),
-      generatedAt: nextAudioGeneratedAt,
-      narration: {
-        ...(currentNarration || {}),
-        voiceId: selectedVoice,
-        language: narrationLanguage,
-        direction: narrationStyle,
-        status: nextNarrationStatus,
-        textPreview:
-          narrationChanged && !keepUploadedNarrationSnapshot
-            ? ""
-            : currentNarration?.textPreview || "",
-        estimatedDuration:
-          narrationChanged && !keepUploadedNarrationSnapshot
-            ? "00:00"
-            : currentNarration?.estimatedDuration || "00:00",
-        generatedSource:
-          narrationChanged || uploadOnlyNarrationSelected
-            ? null
-            : currentNarration?.generatedSource || null,
-        uploadedSource: preservedUploadedSource,
-      },
-      music: {
-        ...(currentMusic || {}),
-        mode: nextMusicMode,
-        trackName:
-          nextMusicMode === "uploaded"
-            ? uploadedTrackNames
-            : musicChanged
-              ? ""
-              : currentMusic?.trackName || "",
-        mood: musicPreset.mood,
-        generationBrief: musicPreset.generationBrief,
-        uploadedTracks: nextMusicMode === "uploaded" ? musicPreset.uploadedTracks : [],
-        generatedSource:
-          musicChanged || nextMusicMode === "uploaded"
-            ? null
-            : currentMusic?.generatedSource || null,
-        endingFadeEnabled: musicPreset.endingFadeEnabled,
-        endingFadeDuration: musicPreset.endingFadeDuration,
-        dynamicVolume: musicPreset.dynamicVolume,
-        status: nextMusicStatus,
-      },
-      sfx: {
-        ...(currentSfx || {}),
-        enabled: soundsPreset.enabled,
-        density: soundsPreset.density,
-        status: nextSfxStatus,
-        cues: soundsPreset.cueFocus,
-      },
-    },
-    captions: {
-      style: toProjectCaptionStyle(captionPreset),
-    },
-    settings: {
-      scriptAgentModel: projectDraft.scriptAgentModel,
-      imageAgentModel: projectDraft.imageGenerationModel,
-      videoAgentModel: projectDraft.motionEngine,
-      voiceId: selectedVoice,
-      projectLanguage: narrationLanguage,
-      tone: projectDraft.projectTone,
-      narrationStyle,
-      visualStyle,
-      targetDuration: deriveTargetDuration(projectDraft.projectType),
-      graphics: graphicsPreset,
-      effects: effectsPreset,
-    },
-  };
+  return `/editor-lab?${params.toString()}`;
 }
+
+
+
+
 
 function toCaptionLabPreset(style?: Partial<ProjectCaptionStyle> | null): CaptionLabPreset {
   return {
     ...defaultCaptionLabPreset,
-    captionPosition: (["top", "center", "bottom", "custom"] as const).includes(style?.captionPosition as any) ? (style!.captionPosition as any) : defaultCaptionLabPreset.captionPosition,
+    captionPosition: isCaptionPosition(style?.captionPosition) ? style.captionPosition : defaultCaptionLabPreset.captionPosition,
     animationStyle: style?.animationStyle === "none" || style?.animationStyle === "slide" || style?.animationStyle === "pop" || style?.animationStyle === "reveal" || style?.animationStyle === "bounce"
       ? style.animationStyle
       : defaultCaptionLabPreset.animationStyle,
@@ -458,31 +314,13 @@ function toCaptionLabPreset(style?: Partial<ProjectCaptionStyle> | null): Captio
   };
 }
 
-function toProjectCaptionStyle(preset: CaptionLabPreset): ProjectCaptionStyle {
-  return {
-    captionPosition: preset.captionPosition,
-    animationStyle: preset.animationStyle,
-    animationIntensity: preset.animationIntensity,
-    wordByWord: preset.wordByWord,
-    wordHighlight: preset.wordHighlight,
-    typography: preset.typography,
-    textSize: preset.textSize,
-    letterSpacing: preset.letterSpacing,
-    colorStyle: preset.colorStyle === "purple" ? "violet" : preset.colorStyle,
-    strokeEnabled: preset.strokeEnabled,
-    strokeWidth: preset.strokeWidth,
-    strokeOpacity: preset.strokeOpacity,
-    strokeColor: preset.strokeColor,
-    watermarkEnabled: preset.watermarkEnabled,
-    watermarkText: preset.watermarkText,
-    watermarkOpacity: preset.watermarkOpacity,
-    watermarkPosition: preset.watermarkPosition,
-  };
-}
+
 
 function EditorLabContent() {
-  const [activeTab, setActiveTab] = useState('visuals');
+  const [activeTab, setActiveTab] = useState<string>('visuals');
   const [saveLabel, setSaveLabel] = useState("Save Project Settings");
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [musicEnabled, setMusicEnabled] = useState(true);
   const [captionPreset, setCaptionPreset] = useState<CaptionLabPreset>(defaultCaptionLabPreset);
   const [captionPresetVersion, setCaptionPresetVersion] = useState(0);
   const [musicPreset, setMusicPreset] = useState<MusicLabPreset>(defaultMusicLabPreset);
@@ -495,9 +333,9 @@ function EditorLabContent() {
 
   // New Global Lab States
   const [visualStyle, setVisualStyle] = useState('');
-  const [references, setReferences] = useState<any[]>([]);
+  const [references, setReferences] = useState<ProjectReferenceAsset[]>([]);
   const [narrationLanguage, setNarrationLanguage] = useState('english');
-  const [selectedVoice, setSelectedVoice] = useState('male-1');
+  const [selectedVoice, setSelectedVoice] = useState('elevenlabs-v3');
   const [narrationStyle, setNarrationStyle] = useState('');
 
   const applyDraftToLab = (draft: ProjectDraft) => {
@@ -514,6 +352,8 @@ function EditorLabContent() {
     writeProjectDraft(hydratedDraft);
 
     if (!hasScopedLocalLabState) {
+      setCaptionsEnabled(project.captions?.status !== "disabled");
+      setMusicEnabled(project.audio?.music?.mode !== "none");
       if (project.captions?.style) {
         setCaptionPreset(toCaptionLabPreset(project.captions.style));
         setCaptionPresetVersion(1);
@@ -533,98 +373,59 @@ function EditorLabContent() {
   };
   const searchParams = useSearchParams();
   const router = useRouter();
+  const requestedOrigin = searchParams.get("from");
+  const requestedProjectId = searchParams.get("projectId");
+  const requestedTemplateId = searchParams.get("template");
+  const origin: EditorLabOrigin = isEditorLabOrigin(requestedOrigin)
+    ? requestedOrigin
+    : requestedProjectId
+      ? "project"
+      : requestedTemplateId
+        ? "templates"
+        : "setup";
+  const resolvedProjectId = projectRecord?.id ?? projectDraft?.projectId ?? requestedProjectId ?? null;
+  const backLink = origin === "production" && resolvedProjectId
+    ? { href: `/projects/${resolvedProjectId}/production`, label: "Production" }
+    : origin === "setup"
+      ? { href: "/projects/new", label: "Factory" }
+      : resolvedProjectId
+        ? { href: `/projects/${resolvedProjectId}`, label: "Dashboard" }
+        : origin === "templates" || Boolean(requestedTemplateId || projectDraft?.template)
+          ? { href: "/templates", label: "Library" }
+          : { href: "/projects/new", label: "Factory" };
 
   useEffect(() => {
     let cancelled = false;
+
+    // 1. Initial hydration from Draft (for new projects or quick display)
     const nextDraft = readProjectDraft();
-    const requestedProjectId = searchParams.get("projectId");
-    const editorLabScopeKey = getEditorLabScopeKey(requestedProjectId || nextDraft?.projectId);
-    const savedPreset = window.localStorage.getItem("cosyl-editor-lab");
-    let hasScopedLocalLabState = false;
-
-    if (savedPreset) {
-      try {
-        const parsedPreset = JSON.parse(savedPreset) as {
-          scopeKey?: string;
-          activeTab?: string;
-          captionPreset?: CaptionLabPreset;
-          musicPreset?: MusicLabPreset;
-          soundsPreset?: SoundsLabPreset;
-          graphicsPreset?: GraphicsLabPreset;
-          effectsPreset?: EffectsLabPreset;
-        };
-
-        if (parsedPreset.scopeKey === editorLabScopeKey) {
-          window.setTimeout(() => {
-            if (parsedPreset.activeTab && ["visuals", "captions", "graphics", "effects", "audio"].includes(parsedPreset.activeTab)) {
-              setActiveTab(parsedPreset.activeTab as any);
-            }
-
-            if (parsedPreset.captionPreset) {
-              setCaptionPreset(parsedPreset.captionPreset);
-              setCaptionPresetVersion((v) => v + 1);
-            }
-
-            if (parsedPreset.musicPreset) {
-              setMusicPreset(normalizeMusicPreset(parsedPreset.musicPreset));
-            }
-
-            if (parsedPreset.soundsPreset) {
-              setSoundsPreset(normalizeSoundsPreset(parsedPreset.soundsPreset));
-            }
-
-            if (parsedPreset.graphicsPreset) {
-              setGraphicsPreset(normalizeGraphicsPreset(parsedPreset.graphicsPreset));
-            }
-
-            if (parsedPreset.effectsPreset) {
-              setEffectsPreset(normalizeEffectsPreset(parsedPreset.effectsPreset));
-            }
-          }, 0);
-          hasScopedLocalLabState = true;
-        }
-      } catch {
-        window.localStorage.removeItem("cosyl-editor-lab");
-      }
-    }
-
-    if (!hasScopedLocalLabState) {
-      setCaptionPreset(defaultCaptionLabPreset);
-      setCaptionPresetVersion((v) => v + 1);
-      setMusicPreset(defaultMusicLabPreset);
-      setSoundsPreset(defaultSoundsLabPreset);
-      setGraphicsPreset(defaultGraphicsLabPreset);
-      setEffectsPreset(defaultEffectsLabPreset);
-    }
-
-    const requestedTab = searchParams.get("tab");
-    if (requestedTab && ["visuals", "captions", "graphics", "effects", "audio"].includes(requestedTab)) {
-      window.setTimeout(() => {
-        setActiveTab(requestedTab as any);
-      }, 0);
-    }
-
     if (nextDraft) {
       applyDraftToLab(nextDraft);
       setVisualStyle(nextDraft.projectContext || '');
+      // If we're coming from setup/templates, default to generative mode or upload
       setSelectedVoice(normalizeSelectedVoice(nextDraft.sourceMode === "upload" ? CUSTOM_AUDIO_UPLOAD_ID : "elevenlabs-default"));
     }
 
+    // 2. Tab restoration from search params
+    const requestedTab = searchParams.get("tab");
+    if (isEditorLabTab(requestedTab)) {
+      window.setTimeout(() => {
+        setActiveTab(requestedTab);
+      }, 0);
+    }
+
+    // 3. Authoritative hydration from API
     const effectiveProjectId = requestedProjectId || nextDraft?.projectId || null;
 
     if (effectiveProjectId) {
       void fetchProject(effectiveProjectId)
         .then((project) => {
-          if (cancelled) {
-            return;
-          }
-
-          applyProjectToLab(project, hasScopedLocalLabState);
+          if (cancelled) return;
+          // Apply project data. This will overwrite draft/local state with server truth.
+          applyProjectToLab(project, false);
         })
         .catch(() => {
-          if (!cancelled) {
-            setProjectRecord(null);
-          }
+          if (!cancelled) setProjectRecord(null);
         });
     } else {
       setProjectRecord(null);
@@ -633,7 +434,7 @@ function EditorLabContent() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [requestedProjectId, searchParams]);
 
   const handleSave = async () => {
     if (!projectDraft) {
@@ -657,6 +458,8 @@ function EditorLabContent() {
     window.localStorage.setItem("cosyl-editor-lab", JSON.stringify({
       scopeKey: getEditorLabScopeKey(projectDraft.projectId),
       activeTab,
+      captionsEnabled,
+      musicEnabled,
       captionPreset,
       musicPreset,
       soundsPreset,
@@ -684,6 +487,8 @@ function EditorLabContent() {
       const payload = buildProjectPayload({
         projectDraft: nextDraft,
         projectRecord,
+        captionsEnabled,
+        musicEnabled,
         captionPreset,
         musicPreset,
         soundsPreset,
@@ -722,6 +527,8 @@ function EditorLabContent() {
       window.localStorage.setItem("cosyl-editor-lab", JSON.stringify({
         scopeKey: getEditorLabScopeKey(persistedProject.id),
         activeTab,
+        captionsEnabled,
+        musicEnabled,
         captionPreset,
         musicPreset,
         soundsPreset,
@@ -735,14 +542,25 @@ function EditorLabContent() {
         && musicPreset.mode === "uploaded"
         && musicPreset.uploadedTracks.length === 0;
 
-      if (requiresUploadedTracksAfterFirstSave) {
+      const editorLabUrl = buildEditorLabUrl({
+        projectId: persistedProject.id,
+        activeTab,
+        origin,
+      });
+
+      // Si c'est une première création ou qu'on vient du flow setup → redirige vers la liste des projets
+      const isFirstCreation = wasUnsavedProject || origin === "setup";
+
+      if (isFirstCreation) {
+        setSaveLabel("Project Saved");
+        router.push("/projects");
+      } else if (requiresUploadedTracksAfterFirstSave) {
         setSaveLabel("Project Saved — Upload Tracks");
-        router.replace(`/editor-lab?projectId=${persistedProject.id}&tab=${activeTab}`);
+        router.replace(editorLabUrl);
       } else {
         setSaveLabel("Project Saved");
-        setTimeout(() => {
-          router.push('/projects');
-        }, 1500);
+        router.replace(editorLabUrl);
+        setTimeout(() => setSaveLabel("Save Project Settings"), 2000);
       }
     } catch (error) {
       console.error("Unable to persist project parameters.", error);
@@ -761,6 +579,8 @@ function EditorLabContent() {
       window.localStorage.setItem("cosyl-editor-lab", JSON.stringify({
         scopeKey: getEditorLabScopeKey(projectDraft.projectId),
         activeTab,
+        captionsEnabled,
+        musicEnabled,
         captionPreset: defaultCaptionLabPreset,
         musicPreset,
         soundsPreset,
@@ -782,6 +602,10 @@ function EditorLabContent() {
       value={{
         activeTab,
         setActiveTab,
+        captionsEnabled,
+        setCaptionsEnabled,
+        musicEnabled,
+        setMusicEnabled,
         captionPreset,
         captionPresetVersion,
         setCaptionPreset,
@@ -809,27 +633,27 @@ function EditorLabContent() {
         setNarrationStyle,
       }}
     >
-      <div className="min-h-screen bg-[#0a0a0f] text-white selection:bg-[#5c2d91]/50 font-sans antialiased relative overflow-hidden">
+      <div className="min-h-screen bg-background text-foreground font-sans antialiased relative overflow-hidden">
         {/* Subtle background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-[#5c2d91]/5 blur-[120px] pointer-events-none" />
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-250 h-75 bg-primary/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent opacity-50" />
 
-        <div className="max-w-[1440px] mx-auto p-4 space-y-1 relative z-10">
+        <div className="max-w-360 mx-auto p-3.5 space-y-1 relative z-10">
 
           {/* Header Section */}
           <div className="flex items-center justify-between py-0.5">
-            <Link href="/projects/new" className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-white transition-colors group uppercase tracking-widest">
+            <Link href={backLink.href} className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors group uppercase tracking-widest font-mono">
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-              <span className="font-medium">Back to Project Setup</span>
+              <span className="font-medium">{backLink.label}</span>
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {activeTab === "captions" && (
-                <Button variant="ghost" className="text-muted-foreground hover:text-white hover:bg-white/5 transition-all px-4 h-8 rounded-full text-[9px] font-black uppercase tracking-[0.2em]" onClick={handleReset}>
-                  Reset Caption Defaults
+                <Button variant="ghost" className="text-muted-foreground hover:text-foreground hover:bg-card transition-all px-4 h-8 rounded-none text-[9px] font-black uppercase tracking-[0.2em] font-mono" onClick={handleReset}>
+                  Reset Defaults
                 </Button>
               )}
               <Button
-                className="bg-[#5c2d91] hover:bg-[#6d39ab] text-white px-6 h-9 rounded-full shadow-[0_5px_20px_-5px_rgba(92,45,145,0.6)] transition-all font-black text-[9px] uppercase tracking-[0.2em] border border-[#7c4dbc]"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-9 rounded-none transition-all font-black text-[9px] uppercase tracking-[0.2em]"
                 onClick={handleSave}
                 disabled={!projectDraft || isSaving}
               >
@@ -838,42 +662,28 @@ function EditorLabContent() {
             </div>
           </div>
 
-          {projectDraft?.projectType ? (
+          {projectRecord && (
             <div className="flex flex-wrap items-center gap-2 pt-2">
-              <Badge variant="outline" className="border-white/10 bg-white/2 text-white/55 text-[8px] uppercase tracking-[0.18em]">
-                {projectTypeLabels[projectDraft.projectType]}
+              <Badge variant="outline" className="border-border bg-card text-muted-foreground text-[8px] uppercase tracking-[0.18em] rounded-none font-mono">
+                Project: {projectRecord.title}
               </Badge>
-              <Badge variant="outline" className="border-white/10 bg-white/2 text-white/40 text-[8px] uppercase tracking-[0.18em]">
-                {projectDraft.projectLanguage}
-              </Badge>
-              {projectRecord ? (
-                <Badge variant="outline" className="border-white/10 bg-white/2 text-white/40 text-[8px] uppercase tracking-[0.18em]">
-                  Project: {projectRecord.title}
-                </Badge>
-              ) : null}
-              {projectDraft.template ? (
-                <Badge variant="outline" className="border-white/10 bg-white/2 text-white/40 text-[8px] uppercase tracking-[0.18em]">
-                  Template: {projectDraft.templateTitle ?? projectDraft.template}
-                </Badge>
-              ) : null}
             </div>
-          ) : null}
+          )}
 
           {/* Lab Navigation Tabs */}
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-8">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-5">
             <div className="flex justify-center">
-              <TabsList className="bg-[#0a0a0f] border border-white/5 p-1 h-auto rounded-full overflow-hidden inline-flex shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
+              <TabsList className="bg-background border border-border p-1 h-auto rounded-none overflow-x-auto no-scrollbar inline-flex gap-1">
                 {[
-                  { id: 'visuals', label: 'Visuals Lab', icon: Palette },
-                  { id: 'captions', label: 'Captions Lab', icon: Type },
-                  { id: 'graphics', label: 'Graphics Lab', icon: Layers },
-                  { id: 'effects', label: 'Effects Lab', icon: Sparkles },
-                  { id: 'audio', label: 'Audio Lab', icon: Music },
+                  { id: 'visuals', label: 'Visuals Lab', icon: ImageIcon },
+                  { id: 'captions', label: 'Captions Lab', icon: FileText },
+                  { id: 'effects', label: 'Effects Lab', icon: Wand2 },
+                  { id: 'audio', label: 'Audio Lab', icon: Mic },
                 ].map((tab) => (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className="px-6 py-2.5 gap-2.5 rounded-full data-[state=active]:bg-white/5 data-[state=active]:text-white text-muted-foreground transition-all uppercase text-[8px] font-black tracking-[0.25em] outline-none"
+                    className="px-4 py-2 gap-2 rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border border-transparent data-[state=active]:border-primary transition-all uppercase text-[8px] font-black tracking-[0.22em] outline-none"
                   >
                     <tab.icon className="w-3 h-3" /> {tab.label}
                   </TabsTrigger>
@@ -882,23 +692,21 @@ function EditorLabContent() {
             </div>
 
             {/* Tab Contents */}
-            <TabsContent value="visuals" className="outline-none pt-2">
+            <TabsContent value="visuals" className="outline-none pt-1">
               {activeTab === "visuals" ? <VisualsLab /> : null}
             </TabsContent>
 
-            <TabsContent value="captions" className="outline-none pt-2">
+            <TabsContent value="captions" className="outline-none pt-1">
               {activeTab === "captions" ? <CaptionsLab /> : null}
             </TabsContent>
 
-            <TabsContent value="graphics" className="outline-none pt-2">
-              {activeTab === "graphics" ? <GraphicsLab /> : null}
-            </TabsContent>
 
-            <TabsContent value="effects" className="outline-none pt-2">
+
+            <TabsContent value="effects" className="outline-none pt-1">
               {activeTab === "effects" ? <EffectsLab /> : null}
             </TabsContent>
 
-            <TabsContent value="audio" className="outline-none pt-2">
+            <TabsContent value="audio" className="outline-none pt-1">
               {activeTab === "audio" ? <AudioLab /> : null}
             </TabsContent>
 
@@ -912,9 +720,9 @@ function EditorLabContent() {
 export default function EditorLabPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-[#050507]">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 rounded-full border-2 border-[#9b6dff] border-t-transparent animate-spin" />
+          <div className="h-8 w-8 rounded-none border-2 border-primary border-t-transparent animate-spin" />
         </div>
       </div>
     }>

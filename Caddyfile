@@ -1,0 +1,25 @@
+# Caddy reverse proxy — automatic HTTPS (Let's Encrypt) for a public VPS deploy.
+#
+# Two subdomains, both pointed (A record) at the server's IP:
+#   APP_DOMAIN  → the Next.js web app   (e.g. app.exemple.com)
+#   API_DOMAIN  → the Express API        (e.g. api.exemple.com)
+#
+# Used only with the TLS override:
+#   docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
+#
+# IMPORTANT: build the web image with NEXT_PUBLIC_API_URL=https://<API_DOMAIN>
+# so the browser bundle calls the API over HTTPS.
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	# Generated media + uploads can be large; allow big request bodies.
+	request_body {
+		max_size 50MB
+	}
+	reverse_proxy api:4000
+}

@@ -1,7 +1,7 @@
-const { runSceneAgent } = require("../../../../services/agents");
+const { runSceneAgent } = require("@cosyl/agents");
 
-function generateScenesFromScript(project) {
-  const agentResult = runSceneAgent(project);
+async function generateScenesFromScript(project) {
+  const agentResult = await runSceneAgent(project);
   return {
     scenes: agentResult.output.scenes,
     production: agentResult.production || null,

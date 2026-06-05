@@ -1,7 +1,7 @@
 const express = require("express");
 
 const { createProjectsRepository } = require("../projects/repository");
-const { invalidateAssembly } = require("../projects/assembly-generator");
+const { invalidateAssembly, resolveWorkingStatus } = require("@cosyl/shared");
 const {
   generateImageVariantsForScene,
   approveImageVariant,
@@ -10,12 +10,14 @@ const {
 const {
   generateVideoVariantsForScene,
   approveVideoVariant,
+  regenerateVideoVariant,
 } = require("./video-generator");
 const {
   ensureImageVariantAsset,
   ensureVideoVariantAsset,
   sendGeneratedMediaFile,
 } = require("./assets");
+const { withErrorHandling } = require("../lib/http");
 
 const router = express.Router();
 const projectsRepository = createProjectsRepository();
@@ -30,19 +32,16 @@ function resetFinalAssemblyReview(review) {
   };
 }
 
-function withErrorHandling(handler) {
-  return async (req, res) => {
-    try {
-      await handler(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: error instanceof Error ? error.message : "Unexpected server error",
-      });
-    }
-  };
-}
+async function findProjectBySceneId(sceneId, projectId = null) {
+  if (projectId) {
+    const project = await projectsRepository.getProject(projectId);
+    if (!project) return null;
+    const scene = (project.scenes || []).find((item) => item.id === sceneId);
+    if (scene) return { project, scene };
+    return null;
+  }
 
-async function findProjectBySceneId(sceneId) {
+  // Fallback: full scan (backward compatible)
   const projects = await projectsRepository.listProjects();
 
   for (const project of projects) {
@@ -55,7 +54,18 @@ async function findProjectBySceneId(sceneId) {
   return null;
 }
 
-async function findProjectByImageId(imageId) {
+async function findProjectByImageId(imageId, projectId = null) {
+  if (projectId) {
+    const project = await projectsRepository.getProject(projectId);
+    if (!project) return null;
+    for (const scene of project.scenes || []) {
+      const imageVariant = (scene.imageVariants || []).find((item) => item.id === imageId);
+      if (imageVariant) return { project, scene, imageVariant };
+    }
+    return null;
+  }
+
+  // Fallback: full scan (backward compatible)
   const projects = await projectsRepository.listProjects();
 
   for (const project of projects) {
@@ -70,7 +80,18 @@ async function findProjectByImageId(imageId) {
   return null;
 }
 
-async function findProjectByVideoId(videoId) {
+async function findProjectByVideoId(videoId, projectId = null) {
+  if (projectId) {
+    const project = await projectsRepository.getProject(projectId);
+    if (!project) return null;
+    for (const scene of project.scenes || []) {
+      const videoVariant = (scene.videoVariants || []).find((item) => item.id === videoId);
+      if (videoVariant) return { project, scene, videoVariant };
+    }
+    return null;
+  }
+
+  // Fallback: full scan (backward compatible)
   const projects = await projectsRepository.listProjects();
 
   for (const project of projects) {
@@ -85,10 +106,12 @@ async function findProjectByVideoId(videoId) {
   return null;
 }
 
+
 function replaceScene(project, sceneId, nextScene, reason) {
   return {
     ...project,
     updatedAt: new Date().toISOString(),
+    status: resolveWorkingStatus(project.status),
     review: resetFinalAssemblyReview(project.review),
     assembly: invalidateAssembly(project, reason),
     scenes: (project.scenes || []).map((scene) => scene.id === sceneId ? nextScene : scene),
@@ -108,7 +131,7 @@ function getMotionChangeReason(project) {
 }
 
 router.get("/media/images/:imageId", withErrorHandling(async (req, res) => {
-  const match = await findProjectByImageId(req.params.imageId);
+  const match = await findProjectByImageId(req.params.imageId, req.query.projectId || null);
 
   if (!match) {
     res.status(404).json({ error: "Image variant not found" });
@@ -127,7 +150,7 @@ router.get("/media/images/:imageId", withErrorHandling(async (req, res) => {
 }));
 
 router.get("/media/videos/:videoId", withErrorHandling(async (req, res) => {
-  const match = await findProjectByVideoId(req.params.videoId);
+  const match = await findProjectByVideoId(req.params.videoId, req.query.projectId || null);
 
   if (!match) {
     res.status(404).json({ error: "Video variant not found" });
@@ -150,8 +173,29 @@ router.get("/media/videos/:videoId", withErrorHandling(async (req, res) => {
   });
 }));
 
+// Hybrid render mode: flip a single scene between animated clip and static image.
+router.post("/scenes/:sceneId/motion-mode", withErrorHandling(async (req, res) => {
+  const requested = req.body?.motionMode;
+  if (requested !== "animate" && requested !== "static") {
+    res.status(400).json({ error: 'motionMode must be "animate" or "static".' });
+    return;
+  }
+
+  const match = await findProjectBySceneId(req.params.sceneId, req.query.projectId || null);
+  if (!match) {
+    res.status(404).json({ error: "Scene not found" });
+    return;
+  }
+
+  const nextScene = { ...match.scene, motionMode: requested };
+  const updatedProject = replaceScene(match.project, match.scene.id, nextScene, getMotionChangeReason(match.project));
+  await projectsRepository.updateProject(updatedProject.id, updatedProject);
+
+  res.json({ data: nextScene });
+}));
+
 router.post("/scenes/:sceneId/images/generate", withErrorHandling(async (req, res) => {
-  const match = await findProjectBySceneId(req.params.sceneId);
+  const match = await findProjectBySceneId(req.params.sceneId, req.query.projectId || null);
 
   if (!match) {
     res.status(404).json({ error: "Scene not found" });
@@ -161,7 +205,8 @@ router.post("/scenes/:sceneId/images/generate", withErrorHandling(async (req, re
   const nextScene = {
     ...match.scene,
     approvedImageId: null,
-    imageVariants: generateImageVariantsForScene(match.scene, match.project, 3),
+    // Budget: 1 output per scene. Regenerate (not pick-among-variants) if unhappy.
+    imageVariants: generateImageVariantsForScene(match.scene, match.project, 1),
     approvedVideoId: null,
     videoVariants: [],
   };
@@ -173,7 +218,7 @@ router.post("/scenes/:sceneId/images/generate", withErrorHandling(async (req, re
 }));
 
 router.post("/images/:imageId/approve", withErrorHandling(async (req, res) => {
-  const match = await findProjectByImageId(req.params.imageId);
+  const match = await findProjectByImageId(req.params.imageId, req.query.projectId || null);
 
   if (!match) {
     res.status(404).json({ error: "Image variant not found" });
@@ -190,7 +235,7 @@ router.post("/images/:imageId/approve", withErrorHandling(async (req, res) => {
 }));
 
 router.post("/images/:imageId/regenerate", withErrorHandling(async (req, res) => {
-  const match = await findProjectByImageId(req.params.imageId);
+  const match = await findProjectByImageId(req.params.imageId, req.query.projectId || null);
 
   if (!match) {
     res.status(404).json({ error: "Image variant not found" });
@@ -207,7 +252,7 @@ router.post("/images/:imageId/regenerate", withErrorHandling(async (req, res) =>
 }));
 
 router.post("/scenes/:sceneId/videos/generate", withErrorHandling(async (req, res) => {
-  const match = await findProjectBySceneId(req.params.sceneId);
+  const match = await findProjectBySceneId(req.params.sceneId, req.query.projectId || null);
 
   if (!match) {
     res.status(404).json({ error: "Scene not found" });
@@ -231,11 +276,8 @@ router.post("/scenes/:sceneId/videos/generate", withErrorHandling(async (req, re
   const nextScene = {
     ...match.scene,
     approvedVideoId: null,
-    videoVariants: generateVideoVariantsForScene(
-      match.scene,
-      match.project,
-      match.project.type?.toLowerCase().includes("slideshow") ? 2 : 3
-    ),
+    // Budget: 1 output per scene. Regenerate (not pick-among-variants) if unhappy.
+    videoVariants: generateVideoVariantsForScene(match.scene, match.project, 1),
   };
 
   const updatedProject = replaceScene(match.project, match.scene.id, nextScene, getMotionChangeReason(match.project));
@@ -245,23 +287,32 @@ router.post("/scenes/:sceneId/videos/generate", withErrorHandling(async (req, re
 }));
 
 router.post("/videos/:videoId/approve", withErrorHandling(async (req, res) => {
-  const projects = await projectsRepository.listProjects();
+  // O(1) lookup when projectId is provided; falls back to full scan for backward compat.
+  const match = await findProjectByVideoId(req.params.videoId, req.query.projectId || null);
 
-  for (const project of projects) {
-    for (const scene of project.scenes || []) {
-      const videoVariant = (scene.videoVariants || []).find((item) => item.id === req.params.videoId);
-
-      if (videoVariant) {
-        const nextScene = approveVideoVariant(scene, req.params.videoId);
-        const updatedProject = replaceScene(project, scene.id, nextScene, getMotionChangeReason(project));
-        await projectsRepository.updateProject(updatedProject.id, updatedProject);
-        res.json({ data: nextScene });
-        return;
-      }
-    }
+  if (!match) {
+    res.status(404).json({ error: "Video variant not found" });
+    return;
   }
 
-  res.status(404).json({ error: "Video variant not found" });
+  const nextScene = approveVideoVariant(match.scene, req.params.videoId);
+  const updatedProject = replaceScene(match.project, match.scene.id, nextScene, getMotionChangeReason(match.project));
+  await projectsRepository.updateProject(updatedProject.id, updatedProject);
+  res.json({ data: nextScene });
+}));
+
+router.post("/videos/:videoId/regenerate", withErrorHandling(async (req, res) => {
+  const match = await findProjectByVideoId(req.params.videoId, req.query.projectId || null);
+
+  if (!match) {
+    res.status(404).json({ error: "Video variant not found" });
+    return;
+  }
+
+  const nextScene = regenerateVideoVariant(match.scene, req.params.videoId, match.project);
+  const updatedProject = replaceScene(match.project, match.scene.id, nextScene, getMotionChangeReason(match.project));
+  await projectsRepository.updateProject(updatedProject.id, updatedProject);
+  res.json({ data: nextScene });
 }));
 
 module.exports = {

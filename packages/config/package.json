@@ -1,0 +1,7 @@
+{
+  "name": "@cosyl/config",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Global business configuration and templates for COSYL Video Engine",
+  "main": "index.js"
+}

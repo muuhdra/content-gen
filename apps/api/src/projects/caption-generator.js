@@ -58,6 +58,33 @@ function splitNarrationIntoChunks(narration) {
   return chunks;
 }
 
+/**
+ * Parses a "MM:SS" duration label into total seconds.
+ * Returns null when the format is unrecognized.
+ * @param {string} durationLabel
+ * @returns {number|null}
+ */
+function parseDurationLabel(durationLabel = "") {
+  const match = String(durationLabel || "").match(/^(\d{2}):(\d{2})$/);
+  if (!match) return null;
+  const minutes = parseInt(match[1], 10);
+  const seconds = parseInt(match[2], 10);
+  const total = minutes * 60 + seconds;
+  return total > 0 ? total : null;
+}
+
+/**
+ * Generates a caption cue track aligned to the project's real audio duration.
+ *
+ * When narration has been generated and carries a valid estimatedDuration label,
+ * the cue timing is proportionally redistributed over that real duration.
+ * This prevents the caption/audio desynchronization that occurs when
+ * scene.duration sums diverge from actual speech timing.
+ *
+ * @param {object} project - Full project record.
+ * @param {object} [styleOverrides]
+ * @returns {object} Normalized captions object.
+ */
 function generateCaptionsTrack(project, styleOverrides = {}) {
   const normalizedStyle = normalizeCaptionStyle(styleOverrides);
   const scenes = Array.isArray(project.scenes) ? project.scenes : [];
@@ -74,6 +101,28 @@ function generateCaptionsTrack(project, styleOverrides = {}) {
     : [];
 
   const sourceScenes = scenes.length > 0 ? scenes : fallbackNarration;
+
+  // Determine the real narration duration if audio has been generated.
+  // This corrects the caption track when actual speech duration differs from
+  // the theoretical sum of scene.duration values.
+  const narration = project.audio?.narration || {};
+  const narrationGenerated = narration.status === "generated" || narration.status === "uploaded";
+  const estimatedTotalSeconds = narrationGenerated
+    ? parseDurationLabel(narration.estimatedDuration)
+    : null;
+
+  const theoreticalTotalSeconds = sourceScenes.reduce(
+    (sum, scene) => sum + Math.max(1, Number(scene.duration) || 4),
+    0,
+  );
+
+  // Scale factor: if real audio is longer/shorter than the sum of scene durations,
+  // stretch/compress all cue offsets proportionally.
+  const scaleFactor =
+    estimatedTotalSeconds !== null && theoreticalTotalSeconds > 0
+      ? estimatedTotalSeconds / theoreticalTotalSeconds
+      : 1;
+
   let currentOffsetMs = 0;
 
   const cues = sourceScenes.flatMap((scene) => {
@@ -83,7 +132,9 @@ function generateCaptionsTrack(project, styleOverrides = {}) {
       return [];
     }
 
-    const sceneDurationMs = Math.max(1000, Math.round((scene.duration || 4) * 1000));
+    const rawSceneDurationMs = Math.max(1000, Math.round((scene.duration || 4) * 1000));
+    // Apply proportional scaling to align cues with real audio timing.
+    const sceneDurationMs = Math.round(rawSceneDurationMs * scaleFactor);
     const cueDurationMs = Math.max(500, Math.floor(sceneDurationMs / chunks.length));
 
     const sceneCues = chunks.map((chunk, chunkIndex) => {
@@ -113,6 +164,7 @@ function generateCaptionsTrack(project, styleOverrides = {}) {
     cues,
   });
 }
+
 
 function invalidateCaptions(captions = {}) {
   const normalizedCaptions = normalizeCaptions(captions);

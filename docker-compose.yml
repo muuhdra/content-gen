@@ -1,0 +1,55 @@
+# COSYL Video Engine — all-in-one deployment.
+#
+#   api  → Express API + in-process render worker (ffmpeg). Owns the persistent
+#          volume that holds all local content (generated media, renders, uploads).
+#   web  → Next.js front-end (next start), talks to the API from the browser.
+#
+# Both services run the SAME image (built once from the root Dockerfile).
+#
+# Usage:
+#   cp .env.example .env   # then fill in the values
+#   docker compose up --build -d
+#
+services:
+  api:
+    build:
+      context: .
+      args:
+        # Baked into the web bundle at build time (browser-facing values).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    image: cosyl-video-engine
+    command: node apps/api/index.js
+    env_file: .env
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+    ports:
+      - "4000:4000"
+    volumes:
+      # Persistent local storage — survives container restarts/redeploys.
+      - cosyl-data:/app/apps/api/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    # Reuses the image built by the `api` service.
+    image: cosyl-video-engine
+    command: npm run start --workspace=@cosyl/web
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  cosyl-data:

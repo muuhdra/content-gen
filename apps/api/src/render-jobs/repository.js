@@ -1,44 +1,32 @@
-const { readRenderJobs, writeRenderJobs } = require("./store");
-const { createSupabaseAdminClient } = require("../../../../libs/db/supabase");
+const {
+  readRenderJobs,
+  createJob,
+  updateJob,
+} = require("./store");
+const { createSupabaseAdminClient } = require("@cosyl/shared/db/supabase");
 const { createSupabaseRenderJobsStore } = require("./supabase-store");
 
 function sortJobsDescending(jobs) {
-  return [...jobs].sort((left, right) => {
-    return new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime();
-  });
+  return [...jobs].sort((a, b) =>
+    new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
+  );
 }
 
 function createFileRenderJobsStore() {
   return {
     async listJobsByProject(projectId) {
       const jobs = await readRenderJobs();
-      return sortJobsDescending(jobs.filter((job) => job.projectId === projectId));
+      return sortJobsDescending(jobs.filter((j) => j.projectId === projectId));
     },
 
     async getJob(jobId) {
       const jobs = await readRenderJobs();
-      return jobs.find((job) => job.id === jobId) ?? null;
+      return jobs.find((j) => j.id === jobId) ?? null;
     },
 
-    async createJob(job) {
-      const jobs = await readRenderJobs();
-      jobs.push(job);
-      await writeRenderJobs(jobs);
-      return job;
-    },
-
-    async updateJob(jobId, nextJob) {
-      const jobs = await readRenderJobs();
-      const jobIndex = jobs.findIndex((job) => job.id === jobId);
-
-      if (jobIndex === -1) {
-        return null;
-      }
-
-      jobs[jobIndex] = nextJob;
-      await writeRenderJobs(jobs);
-      return nextJob;
-    },
+    // Atomic mutations — all run inside the store's write mutex.
+    createJob,
+    updateJob,
   };
 }
 
@@ -52,6 +40,4 @@ function createRenderJobsRepository() {
   return createFileRenderJobsStore();
 }
 
-module.exports = {
-  createRenderJobsRepository,
-};
+module.exports = { createRenderJobsRepository };
