@@ -154,10 +154,3 @@ docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
 - [ ] (HTTPS) DNS `APP_DOMAIN`/`API_DOMAIN` → IP du VPS, ports 80/443 ouverts,
       lancé avec `-f docker-compose.tls.yml` (Caddy gère les certificats)
 
-## Notes de sécurité
-
-- L'API n'a **pas d'authentification** : c'est un outil personnel. Si tu
-  l'exposes sur Internet, place-la derrière un reverse-proxy avec auth (basic
-  auth / VPN / liste d'IP) et restreins le CORS.
-- `SUPABASE_SERVICE_ROLE_KEY` contourne la RLS : ne l'expose jamais côté client
-  ni dans le bundle web (elle reste côté API uniquement).
