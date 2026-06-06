@@ -6,6 +6,7 @@ const { runAssemblyAgent } = require("./assemblyAgent");
 const { runResearchAgent } = require("./researchAgent");
 const { generateThumbnailPrompt } = require("./thumbnailPromptAgent");
 const { analyzeStyleReferences } = require("./styleAnalysisAgent");
+const { directNarration, voiceSupportsAudioTags } = require("./narrationDirectorAgent");
 
 module.exports = {
   runAssemblyAgent,
@@ -16,4 +17,6 @@ module.exports = {
   runResearchAgent,
   generateThumbnailPrompt,
   analyzeStyleReferences,
+  directNarration,
+  voiceSupportsAudioTags,
 };

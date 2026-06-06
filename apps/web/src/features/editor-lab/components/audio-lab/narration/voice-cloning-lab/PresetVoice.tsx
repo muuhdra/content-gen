@@ -35,6 +35,17 @@ const promptPresets = [
   "Clean and neutral delivery",
 ];
 
+// Full delivery directions tailored per content type — one click sets the whole
+// narration tone. These feed the Narration Director as the master register.
+const contentTonePresets: { label: string; direction: string }[] = [
+  { label: "True Crime", direction: "Calm, measured, professional true-crime narration. Low, controlled voice; deliberate pauses before reveals; restrained tension, never sensational." },
+  { label: "Documentary", direction: "Composed documentary narrator. Even, authoritative pace; clear diction; thoughtful pauses; understated gravitas." },
+  { label: "Motivation", direction: "Energetic, uplifting delivery. Confident and punchy; rising intensity toward key lines; strong emphasis on the payoff." },
+  { label: "Storytelling", direction: "Warm, immersive storyteller. Expressive and cinematic; vary pace with the story; lean into emotional beats and suspense." },
+  { label: "Explainer", direction: "Friendly, clear and concise. Approachable mid pace; light emphasis on key terms; no drama, just clarity." },
+  { label: "Mystery", direction: "Low, intriguing, suspenseful narrator. Hushed at times; slow deliberate pacing; let questions hang before answering." },
+];
+
 const sampleScripts = [
   {
     id: "hook",
@@ -249,6 +260,33 @@ export function VoiceCloningPlayground({ onBack }: VoiceCloningPlaygroundProps) 
               </div>
             </div>
             <CardContent className="space-y-4 p-4">
+              {/* Content-type tone presets — one click sets the full delivery direction */}
+              <div className="space-y-2">
+                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-primary/70 font-mono">Ton par type de contenu</p>
+                <div className="flex flex-wrap gap-2">
+                  {contentTonePresets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      title={preset.direction}
+                      onClick={() => {
+                        // Fill the editable field AND apply the direction to the
+                        // project's narration tone in one click.
+                        setStyleNote(preset.direction);
+                        setNarrationStyle(preset.direction);
+                      }}
+                      className={`rounded-none border px-3 py-1 text-[8px] font-black uppercase tracking-[0.16em] transition-colors font-mono ${
+                        narrationStyle === preset.direction
+                          ? "border-primary bg-primary/20 text-primary"
+                          : "border-primary/25 bg-primary/5 text-primary/80 hover:bg-primary/15 hover:text-primary"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 {promptPresets.map((preset) => (
                   <button

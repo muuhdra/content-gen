@@ -5,6 +5,7 @@ const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
 
 const aimlapi = require("@cosyl/agents/llm/aimlapi");
+const { directNarration, voiceSupportsAudioTags } = require("@cosyl/agents");
 const { MODEL_CONFIG } = require("@cosyl/config/models");
 const { sanitizeFileSegment, formatFileSize } = require("../lib/files");
 const { dataRoot } = require("../lib/paths");
@@ -636,8 +637,24 @@ async function ensureGeneratedNarrationAsset({ project, audio }) {
   if (!await fileExists(m4aPath)) {
     if (aimlapi.isAvailable()) {
       // ── Production path: real TTS via AIML API ──────────────────────────
+      // Narration Director: when the voice is ElevenLabs v3 (which understands
+      // inline performance cues), enrich the flat script with audio tags / pauses
+      // driven by the user's narration direction + the per-scene emotional arc.
+      // Other voices would speak the tags aloud, so they keep the plain script.
+      const { aimlModel: voiceModel } = resolveVoiceConfig(narration.voiceId);
+      let narrationText = scriptContent;
+      if (voiceSupportsAudioTags(voiceModel)) {
+        narrationText = await directNarration({
+          scriptContent,
+          deliveryDirection: narration.direction || project.settings?.narrationStyle || project.settings?.tone || "",
+          projectType: project.type,
+          tone: project.settings?.tone,
+          sceneEmotions: (project.scenes || []).map((scene) => scene.emotion).filter(Boolean),
+        });
+      }
+
       const mp3Path = await generateNarrationViaAIML(
-        scriptContent,
+        narrationText,
         narration.voiceId,
         outputDir,
         baseName,
