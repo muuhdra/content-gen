@@ -69,6 +69,8 @@ type GraphicsPresetInput = Partial<GraphicsLabPreset> | {
 type EffectsPresetInput = Partial<EffectsLabPreset> | {
   clipMode?: string;
   motionStyle?: string;
+  kenBurnsIntensity?: string;
+  hybridAnimateRatio?: number;
   moduleState?: Record<string, boolean>;
   videoEndingDuration?: number;
 } | null | undefined;
@@ -178,6 +180,14 @@ function normalizeEffectsPreset(input?: EffectsPresetInput): EffectsLabPreset {
     ...defaultEffectsLabPreset,
     ...input,
     clipMode: input?.clipMode === "video" || input?.clipMode === "hybrid" ? input.clipMode : "static",
+    kenBurnsIntensity:
+      input?.kenBurnsIntensity === "subtle" || input?.kenBurnsIntensity === "strong"
+        ? input.kenBurnsIntensity
+        : "medium",
+    hybridAnimateRatio:
+      typeof input?.hybridAnimateRatio === "number" && input.hybridAnimateRatio > 0 && input.hybridAnimateRatio <= 1
+        ? input.hybridAnimateRatio
+        : defaultEffectsLabPreset.hybridAnimateRatio,
     motionStyle:
       input?.motionStyle === "horizontal-pan" || input?.motionStyle === "zoom-in-out"
         ? input.motionStyle

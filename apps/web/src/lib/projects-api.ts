@@ -19,6 +19,8 @@ export type ProjectSettings = {
   effects: {
     clipMode: string;
     motionStyle: string;
+    kenBurnsIntensity?: string;
+    hybridAnimateRatio?: number;
     moduleState: Record<string, boolean>;
     videoEndingDuration: number;
   };

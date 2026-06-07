@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, Sparkles } from "lucide-react";
 
 import { useEditorLab } from "@/features/editor-lab/editor-lab-context";
-import type { ClipMode, EffectModuleId, MotionStyle } from "./effects-lab-preset";
+import type { ClipMode, EffectModuleId, MotionStyle, KenBurnsIntensity } from "./effects-lab-preset";
 
 type EffectModuleConfig = {
   id: EffectModuleId;
@@ -115,7 +115,7 @@ function ModuleCard({ module, active, onToggle, children }: ModuleCardProps) {
 
 export function EffectsLab() {
   const { effectsPreset, setEffectsPreset } = useEditorLab();
-  const { clipMode, motionStyle, moduleState, videoEndingDuration } = effectsPreset;
+  const { clipMode, motionStyle, kenBurnsIntensity, hybridAnimateRatio, moduleState, videoEndingDuration } = effectsPreset;
   const [previewProgress, setPreviewProgress] = useState(0);
 
   const activeModules = useMemo(() => {
@@ -292,6 +292,27 @@ export function EffectsLab() {
                   : "Toutes les scènes en clips animés. Rendu premium, coût le plus élevé."}
             </p>
 
+            {clipMode === "hybrid" && (
+              <div className="space-y-2 border-t border-border pt-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 font-mono">Budget — scènes animées</p>
+                  <span className="text-[10px] font-black text-primary font-mono">{Math.round(hybridAnimateRatio * 100)}%</span>
+                </div>
+                <Slider
+                  value={[Math.round(hybridAnimateRatio * 100)]}
+                  min={10}
+                  max={100}
+                  step={10}
+                  onValueChange={(value) =>
+                    setEffectsPreset((current) => ({ ...current, hybridAnimateRatio: getSliderValue(value, 40) / 100 }))
+                  }
+                />
+                <p className="text-[9px] leading-relaxed text-muted-foreground/50 font-mono">
+                  Le système anime les scènes les <span className="text-primary/70">plus impactantes</span> (hook, révélations, tension, payoff) jusqu&apos;à ce budget. Le reste en Ken Burns. Tu peux corriger scène par scène à l&apos;étape Motion.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               {motionOptions.map((option) => (
                 <button
@@ -312,6 +333,36 @@ export function EffectsLab() {
                 </button>
               ))}
             </div>
+
+            {/* Ken Burns intensity — how much the still images move (static / hybrid scenes) */}
+            {clipMode !== "video" && (
+              <div className="space-y-2 border-t border-border pt-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 font-mono">Intensité du mouvement (Ken Burns)</p>
+                <div className="flex items-center gap-1 rounded-none border border-border bg-background p-1">
+                  {([
+                    { id: "subtle", label: "Subtil" },
+                    { id: "medium", label: "Moyen" },
+                    { id: "strong", label: "Marqué" },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setEffectsPreset((current) => ({ ...current, kenBurnsIntensity: opt.id as KenBurnsIntensity }))}
+                      className={`flex-1 rounded-none px-2 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-all font-mono ${kenBurnsIntensity === opt.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[9px] leading-relaxed text-muted-foreground/50 font-mono">
+                  {kenBurnsIntensity === "subtle"
+                    ? "Zoom/pan très léger — sobre, documentaire."
+                    : kenBurnsIntensity === "strong"
+                      ? "Mouvement prononcé — dynamique, plus d'énergie."
+                      : "Équilibré — l'illustration respire sans distraire."}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

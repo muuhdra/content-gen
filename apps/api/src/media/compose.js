@@ -61,6 +61,45 @@ function findApprovedVideo(scene) {
   return variants.find((v) => v.id === scene.approvedVideoId) || null;
 }
 
+// Ken Burns intensity presets — how much the still moves over the scene.
+const KEN_BURNS_INTENSITY = {
+  subtle: { zoomRate: 0.0007, maxZoom: 1.06, panZoom: 1.08 },
+  medium: { zoomRate: 0.0012, maxZoom: 1.12, panZoom: 1.12 },
+  strong: { zoomRate: 0.0020, maxZoom: 1.20, panZoom: 1.20 },
+};
+
+/**
+ * Build the FFmpeg `-vf` chain that animates a still image (Ken Burns), honoring
+ * the project's motion style (zoom vs horizontal/vertical pan) and intensity.
+ * Pure + deterministic so it can be unit-tested without invoking FFmpeg.
+ *
+ * @returns {string} the full filter string (scale → crop → zoompan → format)
+ */
+function buildKenBurnsFilter({ motionStyle, intensity, width, height, durationFrames, fps }) {
+  const level = KEN_BURNS_INTENSITY[intensity] || KEN_BURNS_INTENSITY.medium;
+  const d = Math.max(1, Math.round(durationFrames));
+  const style = ["zoom-in-out", "horizontal-pan", "vertical-pan"].includes(motionStyle)
+    ? motionStyle
+    : "zoom-in-out";
+  const base = `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height}`;
+  const size = `:d=${d}:s=${width}x${height}:fps=${fps}`;
+
+  let zoompan;
+  if (style === "horizontal-pan") {
+    // Fixed zoom for crop room, pan left → right across the frame.
+    const z = level.panZoom;
+    zoompan = `zoompan=z=${z}:x='(iw-iw/zoom)*on/(${d}-1)':y='ih/2-(ih/zoom/2)'${size}`;
+  } else if (style === "vertical-pan") {
+    const z = level.panZoom;
+    zoompan = `zoompan=z=${z}:x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*on/(${d}-1)'${size}`;
+  } else {
+    // Slow centered zoom-in.
+    zoompan = `zoompan=z='min(zoom+${level.zoomRate},${level.maxZoom})':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'${size}`;
+  }
+
+  return `${base},${zoompan},format=yuv420p`;
+}
+
 /**
  * Build a silent, normalized segment of exactly `duration` seconds.
  * Returns the absolute path to the segment file.
@@ -103,11 +142,18 @@ async function buildSceneSegment({ project, scene, width, height, segmentDir, du
     const imageAsset = await ensureImageVariantAsset({ project, scene, variant: approvedImage });
 
     if (imageAsset.contentType !== "image/svg+xml") {
-      const zoom = `zoompan=z='min(zoom+0.0012,1.12)':d=${duration * FPS}:s=${width}x${height}:fps=${FPS}`;
+      const vf = buildKenBurnsFilter({
+        motionStyle: project.settings?.effects?.motionStyle,
+        intensity: project.settings?.effects?.kenBurnsIntensity,
+        width,
+        height,
+        durationFrames: duration * FPS,
+        fps: FPS,
+      });
       await execFileAsync("ffmpeg", [
         "-y", "-loop", "1", "-i", imageAsset.absolutePath,
         "-t", String(duration),
-        "-vf", `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height},${zoom},format=yuv420p`,
+        "-vf", vf,
         "-an", "-r", String(FPS),
         "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
         segmentPath,
@@ -311,4 +357,4 @@ async function composeFinalVideo({ project, assembly }) {
   };
 }
 
-module.exports = { composeFinalVideo };
+module.exports = { composeFinalVideo, buildKenBurnsFilter };

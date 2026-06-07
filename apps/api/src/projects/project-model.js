@@ -84,6 +84,8 @@ const defaultSettings = {
   effects: {
     clipMode: "static",
     motionStyle: "vertical-pan",
+    kenBurnsIntensity: "medium",
+    hybridAnimateRatio: 0.4,
     moduleState: {
       "reactive-fx": true,
       "hook-effect": false,

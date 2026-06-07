@@ -49,12 +49,90 @@ function resolveProjectClipMode(project) {
 function resolveSceneMotionMode(index, totalScenes, project) {
   if (isSlideshowProject(project)) return "static";
   const mode = resolveProjectClipMode(project);
-  if (mode === "static") return "static";
   if (mode === "video") return "animate";
+  // "static" → all stills; "hybrid" → provisional "static", overridden by the
+  // impact-based selection pass (applyHybridImpactSelection) once all scenes exist.
+  return "static";
+}
+
+// ── Hybrid: impact-aware scene selection ──────────────────────────────────────
+// Reads each scene's actual narration to estimate how attention-grabbing it is,
+// so the budget-limited animation lands on the scenes that captivate — not on a
+// blind "every 3rd". Pure + deterministic (works without an API key).
+
+const IMPACT_STAKE_WORDS = /\b(but|however|suddenly|until|because|secret|truth|reveal|revealed|shock|shocking|twist|never|nobody|everything|nothing|finally|realized|realised|discovered|warning|danger|dangerous|death|died|killed|war|crisis|betray|betrayed|escape|trapped|secretly|mistake|collapse|disaster|win|won|lost|the moment|turning point|changed everything)\b/;
+const IMPACT_ABSOLUTE_WORDS = /\b(most|biggest|deadliest|greatest|worst|best|first|last|only|always|forever|every|impossible)\b/;
+
+function scoreSceneImpact(scene, index, total) {
+  const raw = String(scene?.narration || "");
+  const text = raw.toLowerCase();
+  let score = 0;
+
+  // Linguistic cues in the actual narration (the "reading").
+  if (raw.includes("?")) score += 2;     // questions / rhetorical hooks
+  if (raw.includes("!")) score += 1.5;   // exclamations / intensity
+  if (/\d/.test(text)) score += 1;       // numbers & stats land harder
+  if (IMPACT_STAKE_WORDS.test(text)) score += 2;     // stakes / revelation / conflict
+  if (IMPACT_ABSOLUTE_WORDS.test(text)) score += 1;  // superlatives / absolutes
+
+  // Emotional arc weight (from buildSceneEmotion).
+  const emo = String(scene?.emotion || "").toLowerCase();
+  if (/(dramatic|intense|attention-grabbing|bold)/.test(emo)) score += 2;
+  else if (/(building intensity|rising)/.test(emo)) score += 1;
+
+  // Structural pivots: hook opens, payoff closes — both naturally captivate.
   const isFirst = index === 0;
-  const isLast = totalScenes > 1 && index === totalScenes - 1;
-  if (isFirst || isLast) return "animate";
-  return index % 3 === 0 ? "animate" : "static";
+  const isLast = total > 1 && index === total - 1;
+  if (isFirst) score += 2.5;
+  if (isLast) score += 1.5;
+
+  // Short punchy beats (stingers) tend to hit.
+  const words = text.split(/\s+/).filter(Boolean).length;
+  if (words > 0 && words <= 12) score += 0.5;
+
+  return score;
+}
+
+// Fraction of scenes to animate in hybrid mode (budget lever). Default 40%.
+function resolveHybridAnimateRatio(project) {
+  const raw = Number(project?.settings?.effects?.hybridAnimateRatio);
+  if (Number.isFinite(raw) && raw > 0 && raw <= 1) return raw;
+  return 0.4;
+}
+
+function selectHybridAnimatedIndices(scenes, ratio) {
+  const total = Array.isArray(scenes) ? scenes.length : 0;
+  if (total === 0) return new Set();
+  const targetCount = Math.max(1, Math.min(total, Math.round(total * ratio)));
+
+  // Hook (and payoff, when budget allows) always animate — they structurally
+  // capture and land the story. The remaining budget goes to the highest-impact
+  // scenes read from the narration.
+  const selected = new Set([0]);
+  if (targetCount >= 2 && total >= 2) selected.add(total - 1);
+
+  const ranked = scenes
+    .map((scene, index) => ({ index, score: scoreSceneImpact(scene, index, total) }))
+    .filter((entry) => !selected.has(entry.index))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  for (const entry of ranked) {
+    if (selected.size >= targetCount) break;
+    selected.add(entry.index);
+  }
+  return selected;
+}
+
+// Assigns motionMode across all scenes for hybrid projects based on impact.
+function applyHybridImpactSelection(scenes, project) {
+  if (isSlideshowProject(project) || resolveProjectClipMode(project) !== "hybrid") {
+    return scenes;
+  }
+  const animate = selectHybridAnimatedIndices(scenes, resolveHybridAnimateRatio(project));
+  scenes.forEach((scene, index) => {
+    scene.motionMode = animate.has(index) ? "animate" : "static";
+  });
+  return scenes;
 }
 
 // Emotional arc across the video: the per-scene emotion shifts with narrative
@@ -267,6 +345,9 @@ async function runSceneAgent(project) {
     scenes = blocks.map((block, index) => createSceneFromBlock(block, index, project, blocks.length));
   }
 
+  // Hybrid mode: pick the most impactful scenes to animate (budget-aware).
+  applyHybridImpactSelection(scenes, project);
+
   const output = { scenes };
 
   return createStructuredAgentResult({
@@ -284,4 +365,6 @@ async function runSceneAgent(project) {
 
 module.exports = {
   runSceneAgent,
+  scoreSceneImpact,
+  selectHybridAnimatedIndices,
 };
