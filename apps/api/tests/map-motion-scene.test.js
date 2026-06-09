@@ -191,25 +191,26 @@ test("detectMotionGraphicType: profile from 'dossier-infographic'", () => {
   assert.equal(detectMotionGraphicType("dossier-infographic"), "profile");
 });
 
-test("doesSceneMatchMotionGraphic: profile matches Caesar narration", () => {
+test("doesSceneMatchMotionGraphic: profile matches multi-word proper name", () => {
   const ref = { name: "character-dossier", label: "motion-graphic" };
   const scene = {
     geoLocation: null,
-    narration: "Julius Caesar was the most powerful general Rome had ever seen. His rise to power threatened the entire Senate.",
+    narration: "Julius Caesar changed the course of Roman history forever.",
   };
   assert.equal(doesSceneMatchMotionGraphic(scene, ref), true);
 });
 
-test("doesSceneMatchMotionGraphic: profile matches criminal biography", () => {
+test("doesSceneMatchMotionGraphic: profile matches without bio keywords", () => {
   const ref = { name: "historical-profile", label: "motion-graphic" };
   const scene = {
     geoLocation: null,
-    narration: "Pablo Escobar built a criminal empire that terrorized Colombia. His death in 1993 shocked the world.",
+    // No "career/power/death" keywords — just a named person
+    narration: "Pablo Escobar was at the center of everything that happened next.",
   };
   assert.equal(doesSceneMatchMotionGraphic(scene, ref), true);
 });
 
-test("doesSceneMatchMotionGraphic: profile does NOT match generic narration", () => {
+test("doesSceneMatchMotionGraphic: profile does NOT match nameless narration", () => {
   const ref = { name: "character-dossier", label: "motion-graphic" };
   const scene = {
     geoLocation: null,

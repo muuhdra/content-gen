@@ -105,17 +105,20 @@ function sceneHasProcess(narration) {
     .test(narration);
 }
 
-// Profile: scene mentions a real/historical/public person AND has biographical
-// signals (career, power, death, rise, fall, life, background, identity…).
-// Two conditions required so generic proper nouns don't false-positive.
+// Profile: scene mentions a person by name (multi-word proper noun that is NOT
+// a geographic location). When the user uploads a "character-dossier" reference
+// they've already expressed intent — we just need a named subject in the scene
+// to know which person to profile. No bio-keyword checklist required.
 function sceneHasPersonProfile(narration) {
   const text = String(narration || "");
-  // 1. At least one capitalized proper name (2+ words or a well-known title).
-  const hasProperName = /\b[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç]+(?:\s+(?:de\s+|the\s+|of\s+)?[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç]+)+\b/.test(text)
-    || /\b(?:Caesar|Napoléon|Napoleon|Hitler|Stalin|Staline|Gandhi|Mandela|Lincoln|Cleopatra|Cléopâtre|Hannibal|Alexandre|Alexander|Charlemagne|Louis\s+XIV|Sun\s+Tzu)\b/i.test(text);
-  if (!hasProperName) return false;
-  // 2. Biographical / career / power signal.
-  return /\b(?:career|power|life|death|born|died|rise|fall|betrayal|trahison|biography|biography|influence|ruled|emperor|king|general|president|dictator|criminal|convicted|sentenced|notorious|feared|legend|legacy|murder|assassin|overthrow|coup|revolution|révolution|règne|règna|régna|né|mort|vie|carrière|puissant|chef|général|président|criminel|condamné|connu|redouté|légendaire|héritage)\b/i.test(text);
+
+  // A multi-word capitalized sequence — at least two capitalized words.
+  // We exclude pure geo-location patterns (preceded by spatial prepositions)
+  // to avoid false-positives like "in Paris, France".
+  const multiWordNamePattern =
+    /(?<![iI]n |[aA]t |[fF]rom |[tT]o |[nN]ear |dans |en |au |à )\b([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç\-']{1,}(?:\s+(?:de\s+|the\s+|of\s+|el\s+|al\s+)?[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç\-']{1,}){1,4})\b/;
+
+  return multiWordNamePattern.test(text);
 }
 
 // Simple tokenizer (matches referenceAnchors.js / assets.js)
@@ -276,25 +279,20 @@ const TYPE_IMAGE_TEMPLATES = {
 
   profile: (subject, styleBrief) =>
     [
-      `Intelligence dossier card — character profile for ${subject}.`,
-      // Background & palette (exactly as seen in the Death of Caesar reference)
-      "Dark textured grid background (dot-grid graph-paper texture, very subtle on near-black).",
-      "Strict monochromatic palette: black, white, grey — with RED accents only (labels, highlights, stamps).",
-      // Portrait
-      "Center: an engraving or etching-style portrait of the subject inside an ornate oval medallion frame,",
-      "black ink on white paper, detailed cross-hatching, aged vignette.",
-      // Card elements
-      "Above the portrait: a bold red rectangular stamp label with the subject's name in uppercase stencil lettering.",
-      "Below the portrait: a torn-paper tag with a handwritten-style red marker annotation",
-      `(e.g. a short judgment or status — something like 'TOO POWERFUL' or relevant to ${subject}).`,
-      "The card has a thin white border frame and sits on the dark grid background.",
-      // Panel hint (static image — the animation is in the video)
-      "To the right of the card: a partially visible bordered panel with 'POLITICAL CAREER' or equivalent",
-      "section title in monospace stencil font, with a bullet-point list beginning to appear.",
-      // Style rules
-      "No photorealism — illustration, engraving, print-media graphic design only.",
-      "No gradients — flat, high-contrast, editorial.",
-      styleBrief ? `Style reference: ${styleBrief.slice(0, 300)}.` : "",
+      `Character profile dossier card for ${subject}.`,
+      // Structure (layout/composition — visual style comes from the reference)
+      "CARD STRUCTURE: a framed character card, centered or left-anchored.",
+      "The card contains: a portrait of the subject (illustration, engraving, painting or photo-collage",
+      "depending on the project's visual style), a name label at the top, and a short descriptor tag below.",
+      "To the right: a bordered information panel with a section title and a list of key facts,",
+      "dates or career milestones beginning to appear.",
+      // Style is driven entirely by the project/reference — no hardcoded palette
+      "VISUAL STYLE: match the reference style exactly.",
+      "The background texture, color palette, typography, border treatment and overall aesthetic",
+      "must follow the uploaded reference and the project's visual style — do NOT default to any",
+      "specific look (dark/light, color/monochrome, vintage/modern) unless the reference dictates it.",
+      "No photorealism unless the reference is photorealistic.",
+      styleBrief ? `LOCKED STYLE DIRECTIVE from reference analysis: ${styleBrief.slice(0, 400)}.` : "",
     ]
       .filter(Boolean)
       .join(" "),
@@ -388,16 +386,19 @@ const MG_VIDEO_VARIANTS = {
       motion: "dossier card drop",
       description: (subject) =>
         [
-          `DOSSIER CARD animation for ${subject}.`,
-          "Dark grid background (dot-grid, near-black). Monochromatic + red palette only.",
-          "The character dossier card SLIDES IN from the right with a slight rotation,",
-          "then SNAPS to center with elastic easing — like a file being tossed onto a desk.",
-          "Red stamp label at the top animates in first (stamp-press effect).",
-          "The portrait (engraving / etching style) fades up inside the oval medallion.",
-          "Below the portrait, a handwritten red marker label TYPES IN letter by letter",
-          `(typewriter effect, cursor blinking) — a short judgment phrase about ${subject}.`,
-          "White thin-line border frame draws around the card last.",
-          "Subtle particle dust / film-grain overlay on the dark background.",
+          `DOSSIER CARD DROP animation for ${subject}.`,
+          // Motion / structure — style-agnostic
+          "The character profile card SLIDES IN from the right with a slight rotation,",
+          "then SNAPS to position with elastic easing — like a file being placed on a surface.",
+          "The name label at the top animates in first (stamp or fade, matching reference style).",
+          "The portrait of the subject fades or wipes in inside its frame.",
+          "Below the portrait, a descriptor tag TYPES IN letter by letter (typewriter effect,",
+          `cursor visible) — a short defining phrase about ${subject}.`,
+          "The card border draws in last. Subtle background texture / grain matching the reference.",
+          // Style: fully driven by the reference — NOT prescriptive
+          "VISUAL STYLE: match the uploaded reference exactly — background, palette, typography,",
+          "border treatment and overall aesthetic all follow the reference. Do not impose any",
+          "default look (dark/light, color/monochrome, vintage/modern).",
           "No audio.",
         ].join(" "),
     },
@@ -407,16 +408,20 @@ const MG_VIDEO_VARIANTS = {
       description: (subject) =>
         [
           `DOSSIER PANEL EXPAND animation for ${subject}.`,
-          "Dark grid background. Monochromatic + red palette. Dossier card is pinned on the left.",
-          "A thin bright vertical line DRAWS OUTWARD from the right edge of the card,",
-          "then a rectangular bordered panel expands to the right (border drawing in, top → right → bottom).",
-          "Inside the panel: a section title (e.g. 'POLITICAL CAREER') in uppercase stencil font fades in.",
-          "Below the title, bullet-point list items APPEAR ONE BY ONE from top to bottom —",
-          "each item: ● role title (white, bold) + date/period (smaller, grey).",
-          "When items overflow, the list SCROLLS UPWARD smoothly revealing more entries.",
-          `All items describe ${subject}'s career, actions or biographical milestones.`,
-          "Optional: a second panel slides in further right — a stylized geographic map",
-          "with conquest/activity regions highlighted in red.",
+          // Motion / structure — style-agnostic
+          "The profile card is anchored on the left side of the frame.",
+          "A thin divider line DRAWS OUTWARD from the card's right edge,",
+          "then a bordered information panel expands to the right (border animates: top → right → bottom).",
+          "Inside the panel: a section title fades in (uppercase, stencil or matching project font).",
+          "Below the title, list items APPEAR ONE BY ONE from top to bottom —",
+          "each entry: a bullet or dot, a title line, a subtitle or date below it.",
+          "When items overflow the panel, the list SCROLLS UPWARD smoothly revealing more entries.",
+          `All items relate to ${subject}'s biography, career, actions or key milestones.`,
+          "Optionally: a second panel slides in further right showing a stylized map or visual",
+          "representing the subject's geographic activity or reach.",
+          // Style: fully driven by the reference
+          "VISUAL STYLE: match the uploaded reference exactly — do not impose any default",
+          "color scheme, background or typography. Follow the reference aesthetic throughout.",
           "No audio.",
         ].join(" "),
     },
