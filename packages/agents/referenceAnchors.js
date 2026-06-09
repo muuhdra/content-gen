@@ -46,7 +46,7 @@ function getLabelSemanticTokens(label) {
   }
 
   // motion-graphic references anchor a type-specific visual style (map, data,
-  // timeline, diagram…). Scene injection is gated by doesSceneMatchMotionGraphic
+  // timeline, diagram, profile…). Scene injection is gated by doesSceneMatchMotionGraphic
   // in motionGraphic.js — NOT by token overlap with the scene text.
   if (label === "motion-graphic") {
     return [
@@ -58,6 +58,9 @@ function getLabelSemanticTokens(label) {
       "timeline", "history", "date", "chronology", "period", "decade",
       // diagram / process
       "diagram", "process", "flow", "step", "system", "workflow",
+      // profile / dossier
+      "dossier", "profile", "character", "portrait", "biography", "career",
+      "person", "figure", "leader", "general", "emperor", "criminal",
     ];
   }
 

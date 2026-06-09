@@ -177,6 +177,74 @@ test("runVideoPromptAgent: standard scene unaffected when no motion-graphic matc
   assert.ok(!variants[0].prompt.includes("cartographic"), "Non-geo prompt must not have map language");
 });
 
+// ── Profile / dossier type ────────────────────────────────────────────────────
+
+test("detectMotionGraphicType: profile from 'character-dossier'", () => {
+  assert.equal(detectMotionGraphicType("character-dossier"), "profile");
+});
+
+test("detectMotionGraphicType: profile from 'historical-profile'", () => {
+  assert.equal(detectMotionGraphicType("historical-profile"), "profile");
+});
+
+test("detectMotionGraphicType: profile from 'dossier-infographic'", () => {
+  assert.equal(detectMotionGraphicType("dossier-infographic"), "profile");
+});
+
+test("doesSceneMatchMotionGraphic: profile matches Caesar narration", () => {
+  const ref = { name: "character-dossier", label: "motion-graphic" };
+  const scene = {
+    geoLocation: null,
+    narration: "Julius Caesar was the most powerful general Rome had ever seen. His rise to power threatened the entire Senate.",
+  };
+  assert.equal(doesSceneMatchMotionGraphic(scene, ref), true);
+});
+
+test("doesSceneMatchMotionGraphic: profile matches criminal biography", () => {
+  const ref = { name: "historical-profile", label: "motion-graphic" };
+  const scene = {
+    geoLocation: null,
+    narration: "Pablo Escobar built a criminal empire that terrorized Colombia. His death in 1993 shocked the world.",
+  };
+  assert.equal(doesSceneMatchMotionGraphic(scene, ref), true);
+});
+
+test("doesSceneMatchMotionGraphic: profile does NOT match generic narration", () => {
+  const ref = { name: "character-dossier", label: "motion-graphic" };
+  const scene = {
+    geoLocation: null,
+    narration: "The city was quiet that morning. Nobody expected what would happen next.",
+  };
+  assert.equal(doesSceneMatchMotionGraphic(scene, ref), false);
+});
+
+test("runVideoPromptAgent: profile scene → Card Drop + Panel Reveal variants", () => {
+  const { runVideoPromptAgent } = require("../../../packages/agents/videoPromptAgent");
+  const scene = {
+    id: "proj-scene-4", sceneId: 4,
+    narration: "Julius Caesar was Rome's most powerful general. His political career spanned decades and his military conquests reshaped the empire.",
+    visualIntent: "Julius Caesar portrait dossier", geoLocation: null,
+    emotion: "dramatic", duration: 8,
+    imageVariants: [], approvedImageId: null,
+    videoVariants: [], approvedVideoId: null, motionMode: "animate",
+  };
+  const project = {
+    id: "proj-1", type: "long-form", title: "The Death of Caesar",
+    settings: { visualStyle: "historical documentary" },
+    references: [{ id: "r4", name: "character-dossier", label: "motion-graphic", storagePath: "/ref/dossier.mov" }],
+    scenes: [scene],
+  };
+  const { output: { variants } } = runVideoPromptAgent({ scene, project, count: 2 });
+  assert.equal(variants.length, 2);
+  assert.ok(variants[0].previewTitle.includes("Card Drop"), `Expected "Card Drop", got "${variants[0].previewTitle}"`);
+  assert.ok(variants[1].previewTitle.includes("Panel Reveal"), `Expected "Panel Reveal", got "${variants[1].previewTitle}"`);
+  assert.ok(variants[0].motion === "dossier card drop", "motion must be dossier card drop");
+  assert.ok(variants[1].motion === "dossier panel expand", "motion must be dossier panel expand");
+  assert.ok(variants[0].prompt.includes("Julius Caesar"), "Prompt must name the subject");
+  assert.ok(variants[0].prompt.toLowerCase().includes("dossier") || variants[0].prompt.toLowerCase().includes("card"), "Must have dossier language");
+  assert.ok(variants[0].prompt.toLowerCase().includes("silent"), "Must be silent");
+});
+
 // ── extractGeoLocation ────────────────────────────────────────────────────────
 
 test("extractGeoLocation: English preposition", () => {

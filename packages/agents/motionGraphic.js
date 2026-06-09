@@ -12,6 +12,10 @@
  *   data      → animated stats, counters, charts, infographics
  *   timeline  → animated chronological / historical sequence
  *   diagram   → animated process, flow, system or step diagram
+ *   profile   → character dossier / intelligence file card (portrait + career
+ *               list + map panel) — the "Death of Caesar" style: dark grid bg,
+ *               black/white/red palette, engraving portrait, stamp labels,
+ *               panels expanding horizontally with typewriter text build
  *   generic   → any other motion graphic — matched via token overlap
  *
  * The reference NAME is the primary signal for type detection — the user
@@ -49,6 +53,12 @@ function extractGeoLocation(narration) {
 
 const MG_TYPE_PATTERNS = [
   {
+    // Profile / dossier FIRST — must win over "data" when name contains
+    // "dossier-infographic", "historical-profile", "character-dossier", etc.
+    type: "profile",
+    pattern: /dossier|profil(?:e|ing)?|fiche|fichier|character.*card|portrait.*card|bio(?:graphy|graphie)?|persona|criminal.*profile|historical.*profile|intel.*card|intelligence.*file/i,
+  },
+  {
     type: "map",
     pattern: /map|carte|geographic|geo|location|pays|ville|country|city|territoire|region|atlas|world|globe/i,
   },
@@ -67,7 +77,7 @@ const MG_TYPE_PATTERNS = [
 ];
 
 /**
- * Returns "map" | "data" | "timeline" | "diagram" | "generic"
+ * Returns "map" | "data" | "timeline" | "diagram" | "profile" | "generic"
  */
 function detectMotionGraphicType(referenceName) {
   const name = String(referenceName || "");
@@ -93,6 +103,19 @@ function sceneHasDate(narration) {
 function sceneHasProcess(narration) {
   return /\b(?:process|step|stage|phase|how(?:\s+it)?\s+works?|system|flow|method|approach|mechanism|étape|processus|étapes|fonctionnement|comment)\b/i
     .test(narration);
+}
+
+// Profile: scene mentions a real/historical/public person AND has biographical
+// signals (career, power, death, rise, fall, life, background, identity…).
+// Two conditions required so generic proper nouns don't false-positive.
+function sceneHasPersonProfile(narration) {
+  const text = String(narration || "");
+  // 1. At least one capitalized proper name (2+ words or a well-known title).
+  const hasProperName = /\b[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç]+(?:\s+(?:de\s+|the\s+|of\s+)?[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç]+)+\b/.test(text)
+    || /\b(?:Caesar|Napoléon|Napoleon|Hitler|Stalin|Staline|Gandhi|Mandela|Lincoln|Cleopatra|Cléopâtre|Hannibal|Alexandre|Alexander|Charlemagne|Louis\s+XIV|Sun\s+Tzu)\b/i.test(text);
+  if (!hasProperName) return false;
+  // 2. Biographical / career / power signal.
+  return /\b(?:career|power|life|death|born|died|rise|fall|betrayal|trahison|biography|biography|influence|ruled|emperor|king|general|president|dictator|criminal|convicted|sentenced|notorious|feared|legend|legacy|murder|assassin|overthrow|coup|revolution|révolution|règne|règna|régna|né|mort|vie|carrière|puissant|chef|général|président|criminel|condamné|connu|redouté|légendaire|héritage)\b/i.test(text);
 }
 
 // Simple tokenizer (matches referenceAnchors.js / assets.js)
@@ -132,6 +155,9 @@ function doesSceneMatchMotionGraphic(scene, reference) {
 
     case "diagram":
       return sceneHasProcess(narration);
+
+    case "profile":
+      return sceneHasPersonProfile(narration);
 
     default: {
       // Generic: require at least one name token present in the scene text.
@@ -188,6 +214,15 @@ function extractSceneSubjectForType(scene, type) {
     return "the process described in the script";
   }
 
+  if (type === "profile") {
+    // Try to pull the person's name from the narration — first multi-word proper
+    // noun sequence (e.g. "Julius Caesar", "Napoleon Bonaparte").
+    const nameMatch = narration.match(
+      /\b([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç]+(?:\s+(?:de\s+|the\s+|of\s+)?[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][a-zàâäéèêëîïôùûüç]+)+)\b/,
+    );
+    return nameMatch ? nameMatch[1] : "the historical figure";
+  }
+
   return "the subject described in the script";
 }
 
@@ -234,6 +269,31 @@ const TYPE_IMAGE_TEMPLATES = {
       "Animated flow design: steps or nodes connected by animated arrows,",
       "clean flat or line-art style, labels appearing with staggered motion, editorial clarity.",
       "No photorealistic photography — this is a graphic / illustrated diagram visual.",
+      styleBrief ? `Style reference: ${styleBrief.slice(0, 300)}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
+
+  profile: (subject, styleBrief) =>
+    [
+      `Intelligence dossier card — character profile for ${subject}.`,
+      // Background & palette (exactly as seen in the Death of Caesar reference)
+      "Dark textured grid background (dot-grid graph-paper texture, very subtle on near-black).",
+      "Strict monochromatic palette: black, white, grey — with RED accents only (labels, highlights, stamps).",
+      // Portrait
+      "Center: an engraving or etching-style portrait of the subject inside an ornate oval medallion frame,",
+      "black ink on white paper, detailed cross-hatching, aged vignette.",
+      // Card elements
+      "Above the portrait: a bold red rectangular stamp label with the subject's name in uppercase stencil lettering.",
+      "Below the portrait: a torn-paper tag with a handwritten-style red marker annotation",
+      `(e.g. a short judgment or status — something like 'TOO POWERFUL' or relevant to ${subject}).`,
+      "The card has a thin white border frame and sits on the dark grid background.",
+      // Panel hint (static image — the animation is in the video)
+      "To the right of the card: a partially visible bordered panel with 'POLITICAL CAREER' or equivalent",
+      "section title in monospace stencil font, with a bullet-point list beginning to appear.",
+      // Style rules
+      "No photorealism — illustration, engraving, print-media graphic design only.",
+      "No gradients — flat, high-contrast, editorial.",
       styleBrief ? `Style reference: ${styleBrief.slice(0, 300)}.` : "",
     ]
       .filter(Boolean)
@@ -322,6 +382,46 @@ const MG_VIDEO_VARIANTS = {
         "Animated arrows and flow lines traveling through the diagram, highlighting each step in sequence. Motion-design editorial aesthetic.",
     },
   ],
+  profile: [
+    {
+      label: "Card Drop",
+      motion: "dossier card drop",
+      description: (subject) =>
+        [
+          `DOSSIER CARD animation for ${subject}.`,
+          "Dark grid background (dot-grid, near-black). Monochromatic + red palette only.",
+          "The character dossier card SLIDES IN from the right with a slight rotation,",
+          "then SNAPS to center with elastic easing — like a file being tossed onto a desk.",
+          "Red stamp label at the top animates in first (stamp-press effect).",
+          "The portrait (engraving / etching style) fades up inside the oval medallion.",
+          "Below the portrait, a handwritten red marker label TYPES IN letter by letter",
+          `(typewriter effect, cursor blinking) — a short judgment phrase about ${subject}.`,
+          "White thin-line border frame draws around the card last.",
+          "Subtle particle dust / film-grain overlay on the dark background.",
+          "No audio.",
+        ].join(" "),
+    },
+    {
+      label: "Panel Reveal",
+      motion: "dossier panel expand",
+      description: (subject) =>
+        [
+          `DOSSIER PANEL EXPAND animation for ${subject}.`,
+          "Dark grid background. Monochromatic + red palette. Dossier card is pinned on the left.",
+          "A thin bright vertical line DRAWS OUTWARD from the right edge of the card,",
+          "then a rectangular bordered panel expands to the right (border drawing in, top → right → bottom).",
+          "Inside the panel: a section title (e.g. 'POLITICAL CAREER') in uppercase stencil font fades in.",
+          "Below the title, bullet-point list items APPEAR ONE BY ONE from top to bottom —",
+          "each item: ● role title (white, bold) + date/period (smaller, grey).",
+          "When items overflow, the list SCROLLS UPWARD smoothly revealing more entries.",
+          `All items describe ${subject}'s career, actions or biographical milestones.`,
+          "Optional: a second panel slides in further right — a stylized geographic map",
+          "with conquest/activity regions highlighted in red.",
+          "No audio.",
+        ].join(" "),
+    },
+  ],
+
   generic: [
     {
       label: "Appear",
