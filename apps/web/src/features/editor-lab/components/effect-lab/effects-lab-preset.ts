@@ -11,6 +11,14 @@ export type EffectsLabPreset = {
   hybridAnimateRatio: number;
   moduleState: Record<EffectModuleId, boolean>;
   videoEndingDuration: number;
+  /**
+   * Budget clips mode (default ON).
+   * When true, video clips are generated at the shortest valid duration for the selected
+   * model (e.g. 5s for Kling/Wan/Seedance, 6s for Hailuo) and looped to the full scene
+   * duration at compose time. Cuts cost by ~50% on Kling. Set to false to generate clips
+   * at the full scene duration (higher quality continuity, higher cost).
+   */
+  budgetClips: boolean;
 };
 
 export const defaultEffectsLabPreset: EffectsLabPreset = {
@@ -24,4 +32,5 @@ export const defaultEffectsLabPreset: EffectsLabPreset = {
     "video-ending": true,
   },
   videoEndingDuration: 2,
+  budgetClips: true,
 };

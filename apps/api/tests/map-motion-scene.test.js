@@ -246,6 +246,86 @@ test("runVideoPromptAgent: profile scene → Card Drop + Panel Reveal variants",
   assert.ok(variants[0].prompt.toLowerCase().includes("silent"), "Must be silent");
 });
 
+// ── videoPromptAgent: timeline variants ──────────────────────────────────────
+
+test("runVideoPromptAgent: timeline scene → Scroll + Zoom variants", () => {
+  const { runVideoPromptAgent } = require("../../../packages/agents/videoPromptAgent");
+  const scene = {
+    id: "proj-scene-5", sceneId: 5,
+    narration: "In 1789, the French Revolution began — one of the most decisive periods of the 18th century.",
+    visualIntent: "Historical timeline of the French Revolution", geoLocation: null,
+    emotion: "dramatic", duration: 6,
+    imageVariants: [], approvedImageId: null,
+    videoVariants: [], approvedVideoId: null, motionMode: "animate",
+  };
+  const project = {
+    id: "proj-1", type: "long-form", title: "Revolutions",
+    settings: { visualStyle: "historical documentary" },
+    references: [{ id: "r5", name: "historical-timeline", label: "motion-graphic", storagePath: "/ref/timeline.mp4" }],
+    scenes: [scene],
+  };
+  const { output: { variants } } = runVideoPromptAgent({ scene, project, count: 2 });
+  assert.equal(variants.length, 2);
+  assert.ok(variants[0].previewTitle.includes("Scroll"), `Expected "Scroll", got "${variants[0].previewTitle}"`);
+  assert.ok(variants[1].previewTitle.includes("Zoom"), `Expected "Zoom", got "${variants[1].previewTitle}"`);
+  assert.ok(variants[0].motion === "timeline scroll", `Expected "timeline scroll", got "${variants[0].motion}"`);
+  assert.ok(variants[1].motion === "timeline zoom", `Expected "timeline zoom", got "${variants[1].motion}"`);
+  assert.ok(variants[0].prompt.toLowerCase().includes("timeline"), "Prompt must reference timeline");
+  assert.ok(variants[0].prompt.toLowerCase().includes("silent"), "Must be silent");
+});
+
+// ── videoPromptAgent: diagram variants ───────────────────────────────────────
+
+test("runVideoPromptAgent: diagram scene → Build + Flow variants", () => {
+  const { runVideoPromptAgent } = require("../../../packages/agents/videoPromptAgent");
+  const scene = {
+    id: "proj-scene-6", sceneId: 6,
+    narration: "The recruitment process works in three distinct steps: screening, interview, then final evaluation.",
+    visualIntent: "Process flow diagram of recruitment steps", geoLocation: null,
+    emotion: "neutral", duration: 6,
+    imageVariants: [], approvedImageId: null,
+    videoVariants: [], approvedVideoId: null, motionMode: "animate",
+  };
+  const project = {
+    id: "proj-1", type: "long-form", title: "HR Process",
+    settings: { visualStyle: "corporate clean" },
+    references: [{ id: "r6", name: "process-flow", label: "motion-graphic", storagePath: "/ref/diagram.mp4" }],
+    scenes: [scene],
+  };
+  const { output: { variants } } = runVideoPromptAgent({ scene, project, count: 2 });
+  assert.equal(variants.length, 2);
+  assert.ok(variants[0].previewTitle.includes("Build"), `Expected "Build", got "${variants[0].previewTitle}"`);
+  assert.ok(variants[1].previewTitle.includes("Flow"), `Expected "Flow", got "${variants[1].previewTitle}"`);
+  assert.ok(variants[0].motion === "diagram node build", `Expected "diagram node build", got "${variants[0].motion}"`);
+  assert.ok(variants[1].motion === "diagram flow animate", `Expected "diagram flow animate", got "${variants[1].motion}"`);
+  assert.ok(variants[0].prompt.toLowerCase().includes("diagram") || variants[0].prompt.toLowerCase().includes("node"), "Prompt must reference diagram");
+  assert.ok(variants[0].prompt.toLowerCase().includes("silent"), "Must be silent");
+});
+
+// ── doesSceneMatchMotionGraphic: generic fallback ─────────────────────────────
+
+test("doesSceneMatchMotionGraphic: generic matches when name token overlaps scene", () => {
+  // Reference name "logo-reveal" → tokens ["logo", "reveal"]
+  // Narration contains "logo" → overlap ≥ 1 → match
+  const ref = { name: "logo-reveal", label: "motion-graphic" };
+  const scene = {
+    geoLocation: null,
+    narration: "The logo fades in against a dark background as the brand identity takes shape.",
+    visualIntent: "Logo reveal animation",
+  };
+  assert.equal(doesSceneMatchMotionGraphic(scene, ref), true);
+});
+
+test("doesSceneMatchMotionGraphic: generic does NOT match when no token overlap", () => {
+  const ref = { name: "logo-reveal", label: "motion-graphic" };
+  const scene = {
+    geoLocation: null,
+    narration: "A child runs through a wheat field in the early morning light.",
+    visualIntent: "Pastoral countryside scene",
+  };
+  assert.equal(doesSceneMatchMotionGraphic(scene, ref), false);
+});
+
 // ── extractGeoLocation ────────────────────────────────────────────────────────
 
 test("extractGeoLocation: English preposition", () => {

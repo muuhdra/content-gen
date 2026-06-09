@@ -23,6 +23,8 @@ export type ProjectSettings = {
     hybridAnimateRatio?: number;
     moduleState: Record<string, boolean>;
     videoEndingDuration: number;
+    /** Generate short clips (shortest valid duration per model) and loop at compose time. Default true. */
+    budgetClips?: boolean;
   };
 };
 
@@ -202,6 +204,8 @@ export type ProjectAudio = {
   };
   sfx: {
     enabled: boolean;
+    /** Use ElevenLabs AI Sound Effects. When false, falls back to procedural FFmpeg generator. */
+    aiSfx?: boolean;
     density: string;
     status: string;
     designBrief?: string;

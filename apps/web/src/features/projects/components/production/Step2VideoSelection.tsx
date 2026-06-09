@@ -71,7 +71,7 @@ function VideoVariantCard({
         </button>
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
           <Badge variant="outline" className="border-border bg-black/50 backdrop-blur-sm text-[8px] font-black uppercase tracking-tight text-foreground/70 rounded-none font-mono">
-            {variant.motion}
+            {variant.previewTitle || variant.motion}
           </Badge>
           <Badge variant="outline" className="border-border bg-black/50 backdrop-blur-sm text-[8px] font-black uppercase tracking-tight text-muted-foreground/50 rounded-none font-mono">
             {variant.engine}
@@ -97,8 +97,8 @@ function VideoVariantCard({
       </div>
       <div className="p-4 space-y-3">
         <div>
-          <p className="text-[11px] font-black text-foreground/70 font-mono">{variant.motion} · {variant.energy}</p>
-          <p className="text-[9px] text-muted-foreground/30 mt-1 font-mono">{variant.engine}</p>
+          <p className="text-[11px] font-black text-foreground/70 font-mono">{variant.previewTitle || variant.motion} · {variant.energy}</p>
+          <p className="text-[9px] text-muted-foreground/30 mt-1 font-mono">{variant.motion} · {variant.engine}</p>
         </div>
         <div className="flex items-center gap-2">
           {isApproved ? (

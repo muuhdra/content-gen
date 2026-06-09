@@ -341,6 +341,38 @@ async function generateVideo({ imageBuffer, imageMimeType = "image/png", prompt,
   return videoUrl;
 }
 
+// ─── Sound effect generation (ElevenLabs SFX) ────────────────────────────────
+// POST /v1/sound-generation → returns raw audio bytes (mp3).
+// Synchronous — no polling needed.
+
+async function generateSoundEffect({ prompt, durationSeconds = 2, promptInfluence = 0.5 }) {
+  const apiKey = process.env.AIML_API_KEY;
+  if (!apiKey) throw new Error("AIML_API_KEY is not configured.");
+
+  const clampedDuration = Math.max(0.5, Math.min(30, Number(durationSeconds) || 2));
+
+  const res = await fetch(`${AIML_V1_BASE}/sound-generation`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      text: String(prompt).slice(0, 450),
+      model_id: "eleven_text_to_sound_v2",
+      duration_seconds: clampedDuration,
+      prompt_influence: Math.max(0, Math.min(1, Number(promptInfluence) || 0.5)),
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Sound effect generation failed (${res.status}): ${detail.slice(0, 200)}`);
+  }
+
+  return Buffer.from(await res.arrayBuffer()); // mp3 buffer
+}
+
 // ─── Music generation (async) ─────────────────────────────────────────────────
 // Endpoint: POST /v2/generate/audio  → { id }
 // Poll:     GET  /v2/generate/audio?generation_id={id} → { status, audio:{url} }
@@ -396,6 +428,7 @@ module.exports = {
   generateSpeech,
   generateVideo,
   generateMusic,
+  generateSoundEffect,
   submitAsyncJob,
   pollAsyncJob,
   resolveSupportedDuration,

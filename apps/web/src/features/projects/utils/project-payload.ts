@@ -166,6 +166,7 @@ export function buildProjectPayload({
     
   const sfxChanged =
     Boolean(currentSfx?.enabled) !== soundsPreset.enabled ||
+    Boolean(currentSfx?.aiSfx !== false) !== soundsPreset.aiSfx ||
     (currentSfx?.density || "light") !== soundsPreset.density ||
     !areStringListsEqual(currentSfx?.cues, soundsPreset.cueFocus);
     
@@ -266,6 +267,7 @@ export function buildProjectPayload({
       sfx: {
         ...(currentSfx || {}),
         enabled: soundsPreset.enabled,
+        aiSfx: soundsPreset.aiSfx,
         density: soundsPreset.density,
         status: nextSfxStatus,
         cues: soundsPreset.cueFocus,

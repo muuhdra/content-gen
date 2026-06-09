@@ -469,9 +469,10 @@ function NewProjectContent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-border bg-background">
-                      <SelectItem value="gemini-2.5-flash-image" className="font-mono text-[10px]">Nano Banana (Gemini 2.5 Flash) — budget</SelectItem>
-                      <SelectItem value="flux-schnell" className="font-mono text-[10px]">Flux Schnell — cheapest</SelectItem>
-                      <SelectItem value="nano-banana-pro" className="font-mono text-[10px]">Nano Banana Pro (Gemini 3 Pro) — premium</SelectItem>
+                      <SelectItem value="qwen-image-plus" className="font-mono text-[10px]">Qwen-image-plus — budget ($0.03)</SelectItem>
+                      <SelectItem value="gemini-2.5-flash-image" className="font-mono text-[10px]">Nano Banana (Gemini 2.5 Flash) — défaut ($0.04)</SelectItem>
+                      <SelectItem value="seedream-4.5" className="font-mono text-[10px]">Seedream 4.5 — photo premium ($0.04)</SelectItem>
+                      <SelectItem value="nano-banana-pro" className="font-mono text-[10px]">Nano Banana Pro (Gemini 3 Pro) — premium max ($0.12)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -10,6 +10,7 @@ import { Music2, Sparkles, Upload, Volume2, X } from "lucide-react";
 import { clearProjectMusicTracks, deleteProjectMusicTrack, uploadProjectMusicTrack } from "@/lib/projects-api";
 
 import { useEditorLab } from "@/features/editor-lab/editor-lab-context";
+import { CardInfoHeader } from "@/features/editor-lab/components/CardInfoHeader";
 import type { MusicMode, MusicMood, UploadedMusicTrack } from "./music-lab-preset";
 
 const musicModeOptions: Array<{
@@ -203,14 +204,14 @@ export function MusicLab() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_1fr]">
         <div className="space-y-5">
           <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-            <div className=" px-5 py-3.5">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-                Music Layer
-              </h3>
-              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-                Toggle global music state for this project.
-              </p>
-            </div>
+            <CardInfoHeader
+              title="Music Layer"
+              subtitle="Toggle global music state for this project."
+              info={<>
+                <p>Active ou désactive la couche musicale pour l'ensemble du projet. Quand désactivée, aucune musique n'est générée ni utilisée lors de l'assemblage — la vidéo finale contient uniquement la narration et les SFX.</p>
+                <p className="text-muted-foreground/50">Tu peux désactiver la musique pour livrer un projet "voix sèche" ou pour ajouter ta propre musique en post-production.</p>
+              </>}
+            />
             <CardContent className="p-3.5">
               <div className="flex items-center justify-between rounded-none border border-border bg-background px-4 py-4">
                 <div>
@@ -229,14 +230,14 @@ export function MusicLab() {
           {musicEnabled ? (
             <>
               <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-                <div className=" px-5 py-3.5">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-                    Music Source
-                  </h3>
-                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-                    Select between uploaded tracks or an AI-generated soundtrack.
-                  </p>
-                </div>
+                <CardInfoHeader
+                  title="Music Source"
+                  subtitle="Select between uploaded tracks or an AI-generated soundtrack."
+                  info={<>
+                    <p><span className="text-foreground font-bold">Upload Tracks</span> — Tu fournis tes propres fichiers audio (MP3, WAV, AIFF, M4A). Le système les utilise directement lors de l'assemblage sans passer par un générateur IA. Idéal si tu as une bibliothèque musicale ou des droits sur des tracks spécifiques.</p>
+                    <p><span className="text-foreground font-bold">AI Generate</span> — Le système génère une bande originale IA adaptée au ton du projet. Tu définis l'ambiance (mood) et une description optionnelle maintenant. La génération effective se fait plus tard à l'étape Audio.</p>
+                  </>}
+                />
                 <CardContent className="space-y-3.5 p-3.5">
                   {musicModeOptions.map((option) => (
                     <button
@@ -262,14 +263,14 @@ export function MusicLab() {
               </Card>
 
               <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-                <div className=" px-5 py-3.5">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-                    Mix Finish
-                  </h3>
-                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-                    Ending behavior and narration-aware ducking.
-                  </p>
-                </div>
+                <CardInfoHeader
+                  title="Mix Finish"
+                  subtitle="Ending behavior and narration-aware ducking."
+                  info={<>
+                    <p><span className="text-foreground font-bold">Music Ending</span> — Applique un fondu de sortie progressif sur la musique à la fin de la vidéo. Sans ce fondu, la musique s'arrête abruptement. La durée définit combien de secondes avant la fin le fondu démarre.</p>
+                    <p><span className="text-foreground font-bold">Dynamic Volume</span> — Quand activé, le volume de la musique monte légèrement pendant les silences de narration, puis redescend dès que la voix reprend. Donne au mix plus de vie et de profondeur sans masquer la parole.</p>
+                  </>}
+                />
                 <CardContent className="space-y-4 p-3.5">
                   <div className="rounded-none border border-border bg-background p-4">
                     <div className="flex items-center justify-between gap-3">

@@ -19,6 +19,7 @@ import { Box, ImageIcon, Map, MapPin, Palette, Search, Trash2, Upload, User, X, 
 import { writeProjectDraft } from "@/features/projects/utils/project-draft";
 
 import { useEditorLab } from "@/features/editor-lab/editor-lab-context";
+import { SettingInfo } from "@/features/editor-lab/components/CardInfoHeader";
 
 type VisualReferenceLabel = "Character" | "Scene" | "Object" | "Style" | "Motion";
 
@@ -141,7 +142,7 @@ export function VisualsLab() {
     setReferences,
     narrationStyle,
   } = useEditorLab();
-  const [referenceFilter, setReferenceFilter] = useState<"All" | VisualReferenceLabel | "motion-graphic">("All");
+  const [referenceFilter, setReferenceFilter] = useState<"All" | VisualReferenceLabel>("All");
   const [referenceQuery, setReferenceQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -493,9 +494,16 @@ export function VisualsLab() {
         <div className="rounded-none border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-4 pb-3">
             <div className="space-y-1">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-primary font-display">
-                Visual Style Lock
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-primary font-display">
+                  Visual Style Lock
+                </h3>
+                <SettingInfo info={<>
+                  <p>Verrouille le <span className="text-foreground font-bold">style visuel global</span> du projet. Chaque image générée suivra ce style — palette, rendu, textures, architecture, design des personnages.</p>
+                  <p>Upload des images avec le label <span className="text-foreground font-bold">Style</span>, puis utilise "Reverse-engineer style" pour que l'IA génère automatiquement la directive verrouillée à partir de tes références.</p>
+                  <p className="text-muted-foreground/50">Ce style s'applique à toutes les scènes du projet. Modifiable à tout moment — les images déjà générées ne sont pas re-générées automatiquement.</p>
+                </>} />
+              </div>
               <p className="max-w-xl text-[13px] leading-relaxed text-muted-foreground font-sans">
                 Locks the animation & art style — character design language, building shapes, environment and palette — applied to every scene of the project.
               </p>
@@ -604,9 +612,21 @@ export function VisualsLab() {
         <div className="flex flex-col gap-3 pb-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-primary font-display">
-                Style Reference Kit
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-primary font-display">
+                  Style Reference Kit
+                </h3>
+                <SettingInfo info={<>
+                  <p>Images et vidéos utilisées comme <span className="text-foreground font-bold">guide visuel global</span> du projet. Elles sont injectées dans chaque prompt de génération d'image pour que le système produise des visuels cohérents.</p>
+                  <p>Les <span className="text-foreground font-bold">labels</span> définissent l'usage de chaque référence :</p>
+                  <p>• <span className="text-foreground font-bold">Character</span> — verrouille l'identité d'un personnage spécifique (visage, silhouette, tenue)</p>
+                  <p>• <span className="text-foreground font-bold">Scene</span> — verrouille un décor ou environnement précis</p>
+                  <p>• <span className="text-foreground font-bold">Style</span> — définit la palette, texture et ambiance visuelle globale</p>
+                  <p>• <span className="text-foreground font-bold">Object</span> — verrouille un prop, véhicule ou objet spécifique</p>
+                  <p>• <span className="text-foreground font-bold">Motion</span> — motion graphic de référence (carte animée, stats, timeline, dossier…). Le système l'active automatiquement sur les scènes qui correspondent — ex: une scène mentionnant une ville → carte animée.</p>
+                  <p className="text-muted-foreground/50">Max 4 références actives par scène. Tu peux en uploader jusqu'à 15 au total. Nommer les références de façon descriptive aide le système à les matcher précisément.</p>
+                </>} />
+              </div>
               <p className="max-w-xl text-[13px] leading-relaxed text-muted-foreground font-sans">
                 Images & videos (incl. YouTube URLs) that define the project STYLE — character design language, architecture/shapes, environment and overall look. Script-specific subjects are added later in the project workflow.
               </p>

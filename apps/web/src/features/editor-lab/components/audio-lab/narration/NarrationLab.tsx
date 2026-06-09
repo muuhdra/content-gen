@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ExternalLink, Languages, Mic, Pause, Play, User, Volume2, Wand2 } from "lucide-react";
 
 import { useEditorLab } from "@/features/editor-lab/editor-lab-context";
+import { CardInfoHeader } from "@/features/editor-lab/components/CardInfoHeader";
 import { VoiceCloningPlayground } from "./voice-cloning-lab/PresetVoice";
 import { CUSTOM_AUDIO_UPLOAD_ID, findBuiltClone, isCustomVoiceId } from "./voice-cloning-lab/voice-clone-storage";
 import { useVoicePreview } from "./use-voice-preview";
@@ -138,14 +139,15 @@ export function NarrationLab() {
     <div className="mx-auto grid max-w-[94%] grid-cols-1 gap-6 xl:grid-cols-[360px_1fr] animate-in fade-in duration-700">
       <div className="space-y-5">
         <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-          <div className=" px-5 py-3.5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-              Narration Setup
-            </h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-              Configure the primary voice profile for project-wide narration.
-            </p>
-          </div>
+          <CardInfoHeader
+            title="Narration Setup"
+            subtitle="Configure the primary voice profile for project-wide narration."
+            info={<>
+              <p>Définit la <span className="text-foreground font-bold">langue</span> et la <span className="text-foreground font-bold">voix</span> utilisées pour générer la narration de toutes les scènes du projet.</p>
+              <p>La <span className="text-foreground font-bold">langue</span> affecte la prononciation, les règles d'accentuation et le rythme du moteur TTS. Choisis la même langue que ton script pour un résultat optimal.</p>
+              <p>La <span className="text-foreground font-bold">voix</span> reste la même sur tout le projet — tu peux la tester avant de valider via le bouton "Test Voice".</p>
+            </>}
+          />
           <CardContent className="space-y-4 p-3.5">
             <div className="rounded-none border border-border bg-background p-4">
               <div className="flex items-center gap-2 text-foreground">
@@ -219,14 +221,15 @@ export function NarrationLab() {
         </Card>
 
         <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-          <div className=" px-5 py-3.5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-              Delivery Direction
-            </h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-              Tone, pacing and diction guidelines for the voice engine.
-            </p>
-          </div>
+          <CardInfoHeader
+            title="Delivery Direction"
+            subtitle="Tone, pacing and diction guidelines for the voice engine."
+            info={<>
+              <p>Ces instructions sont <span className="text-foreground font-bold">transmises au moteur de voix</span> lors de la génération de narration. Elles ne sont PAS lues dans la vidéo — elles guident uniquement le style de lecture.</p>
+              <p>Tu peux y préciser : le <span className="text-foreground font-bold">rythme</span> (lent, dynamique, posé), l'<span className="text-foreground font-bold">émotion</span> (grave, enthousiaste, neutre), la <span className="text-foreground font-bold">diction</span> (claire, articulée, chuchotée), les <span className="text-foreground font-bold">pauses</span> et l'<span className="text-foreground font-bold">accentuation</span>.</p>
+              <p className="text-muted-foreground/50">Plus les instructions sont précises et contextuelles, plus la voix générée correspond à l'intention du script.</p>
+            </>}
+          />
           <CardContent className="space-y-4 p-3.5">
             <div className="flex flex-wrap gap-2">
               {stylePresets.map((preset) => (

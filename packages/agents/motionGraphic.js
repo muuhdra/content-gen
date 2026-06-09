@@ -13,9 +13,9 @@
  *   timeline  → animated chronological / historical sequence
  *   diagram   → animated process, flow, system or step diagram
  *   profile   → character dossier / intelligence file card (portrait + career
- *               list + map panel) — the "Death of Caesar" style: dark grid bg,
- *               black/white/red palette, engraving portrait, stamp labels,
- *               panels expanding horizontally with typewriter text build
+ *               list + panels). Structure: framed card, name label, descriptor
+ *               tags, animated detail build. Visual style is driven entirely by
+ *               the uploaded reference — no default palette or texture assumed.
  *   generic   → any other motion graphic — matched via token overlap
  *
  * The reference NAME is the primary signal for type detection — the user

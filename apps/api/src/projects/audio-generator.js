@@ -136,6 +136,126 @@ function buildSfxDesignBrief(project, cues = []) {
   ].filter(Boolean).join(" ");
 }
 
+// ── AI SFX: genre detection ──────────────────────────────────────────────────
+
+function detectProjectGenre(project = {}) {
+  const combined = [
+    project.goal || "",
+    project.title || "",
+    project.settings?.tone || "",
+    project.settings?.visualStyle || "",
+    project.settings?.targetAudience || "",
+    (project.script?.content || "").slice(0, 400),
+  ].join(" ").toLowerCase();
+
+  if (/\b(crime|murder|detective|investigat|thriller|suspect|police|fbi|cold.?case|heist)\b/.test(combined)) return "crime";
+  if (/\b(documentary|nature|wildlife|expedition|explore|journey|habitat|planet|climate)\b/.test(combined)) return "documentary";
+  if (/\b(horror|scary|fear|haunt|paranormal|creep|dark|sinister|nightmare)\b/.test(combined)) return "horror";
+  if (/\b(luxury|premium|high.?end|elegant|fashion|prestige|exclusive|couture)\b/.test(combined)) return "luxury";
+  if (/\b(tech|startup|software|app|digital|ai|data|code|cyber|saas|platform)\b/.test(combined)) return "tech";
+  if (/\b(education|learn|course|tutorial|explain|student|teacher|lesson|school)\b/.test(combined)) return "educational";
+  if (/\b(corporate|business|brand|enterprise|b2b|company|professional|strategy)\b/.test(combined)) return "corporate";
+  if (/\b(sport|athlete|fitness|workout|race|competition|champion|training)\b/.test(combined)) return "sport";
+  if (/\b(history|heritage|archive|museum|ancient|civilization|era|century)\b/.test(combined)) return "historical";
+
+  return "cinematic";
+}
+
+// ── AI SFX: per-scene prompt builder ─────────────────────────────────────────
+// Maps genre + scene cue type → a rich ElevenLabs SFX text prompt.
+
+const AI_SFX_PROMPTS = {
+  crime: {
+    "reveal accent":       "tense dramatic sting, crime thriller reveal, dark orchestral hit with deep bass drop, suspense",
+    "tense pulse":         "dark tension drone, crime investigation atmosphere, low rumbling with dissonant high strings",
+    "precision tick":      "typewriter mechanical click, noir evidence detail, sharp rhythmic accent",
+    "mechanical transition": "dark cinematic whoosh, crime scene cut, deep bass sweep with metallic tail",
+    "soft lift":           "muted string breath, quiet crime drama moment, subtle tension release",
+    "cinematic accent":    "noir cinematic impact, crime thriller accent, dramatic bass hit with reverb",
+  },
+  documentary: {
+    "reveal accent":       "orchestral discovery sting, nature documentary reveal, uplifting brass swell",
+    "tense pulse":         "deep nature tension, documentary suspense, low environmental drone with subtle percussion",
+    "precision tick":      "light documentary percussion tick, factual moment, clean natural accent",
+    "mechanical transition": "cinematic whoosh, documentary scene bridge, warm atmospheric sweep",
+    "soft lift":           "gentle nature breath, soft orchestral moment, documentary calm and wonder",
+    "cinematic accent":    "nature documentary impact, gentle brass accent, atmospheric cinematic hit",
+  },
+  horror: {
+    "reveal accent":       "horror reveal sting, unsettling orchestral hit, dissonant strings with bass drop",
+    "tense pulse":         "horror tension drone, low sub-bass rumble, creeping dark atmosphere",
+    "precision tick":      "ominous precise tick, horror countdown, eerie rhythmic element",
+    "mechanical transition": "dark horror whoosh, disturbing scene cut, creepy bass sweep",
+    "soft lift":           "quiet unsettling moment, muted horror calm, subtle eerie breath",
+    "cinematic accent":    "horror impact hit, deep terrifying bass drop, dark cinematic accent",
+  },
+  luxury: {
+    "reveal accent":       "elegant luxury reveal, soft chime with warm reverb, premium brand moment",
+    "tense pulse":         "subtle luxury ambience, premium atmospheric pulse, refined elegant rhythm",
+    "precision tick":      "refined luxury click, elegant detail accent, crystalline precision",
+    "mechanical transition": "smooth luxury sweep, elegant cinematic transition, premium warm whoosh",
+    "soft lift":           "warm luxury breath, gentle premium tone, sophisticated soft lift",
+    "cinematic accent":    "luxury brand impact, elegant cinematic hit, premium orchestral moment",
+  },
+  tech: {
+    "reveal accent":       "digital interface reveal, electronic sting with glitch accent, modern tech moment",
+    "tense pulse":         "cyberpunk tension drone, digital ambience, electronic low frequency pulse",
+    "precision tick":      "clean UI click, digital precision accent, modern interface interaction",
+    "mechanical transition": "digital sweep transition, electronic whoosh, tech scene cut",
+    "soft lift":           "digital optimism lift, clean electronic tone, tech forward moment",
+    "cinematic accent":    "tech cinematic hit, digital impact with electronic tail, modern accent",
+  },
+  educational: {
+    "reveal accent":       "bright educational discovery chime, learning moment sting, uplifting tone",
+    "tense pulse":         "focused study rhythm, warm learning atmosphere, soft educational pulse",
+    "precision tick":      "learning progress click, educational step sound, clean positive accent",
+    "mechanical transition": "smooth lesson transition, clean educational sweep, chapter bridge",
+    "soft lift":           "warm encouragement lift, gentle chime, educational optimism",
+    "cinematic accent":    "educational highlight, uplifting warm accent, learning impact",
+  },
+  corporate: {
+    "reveal accent":       "clean corporate reveal, modern business sting, bright professional tone",
+    "tense pulse":         "subtle corporate tension, professional meeting ambience, light rhythmic pulse",
+    "precision tick":      "clean corporate data click, modern precision, business accuracy accent",
+    "mechanical transition": "smooth professional transition, corporate whoosh, clean business sweep",
+    "soft lift":           "light corporate optimism, professional warmth, clean business lift",
+    "cinematic accent":    "corporate brand impact, clean professional hit, modern business accent",
+  },
+  sport: {
+    "reveal accent":       "powerful sports reveal sting, energetic impact hit, adrenaline accent",
+    "tense pulse":         "intense competition rhythm, sports tension, high energy pulse",
+    "precision tick":      "athletic precision click, sport data accent, sharp competitive tick",
+    "mechanical transition": "fast sports sweep, energetic cut, dynamic transition whoosh",
+    "soft lift":           "athletic uplift, motivational soft moment, sports spirit breath",
+    "cinematic accent":    "epic sports impact, powerful cinematic hit, championship accent",
+  },
+  historical: {
+    "reveal accent":       "historic orchestral reveal, heritage discovery sting, period drama hit",
+    "tense pulse":         "historical tension, period drama atmosphere, ancient resonant drone",
+    "precision tick":      "period clock tick, historical archive accent, antiquated mechanical detail",
+    "mechanical transition": "historical cinematic sweep, period drama transition, heritage bridge",
+    "soft lift":           "historical reflection, gentle period drama breath, heritage calm",
+    "cinematic accent":    "epic historical impact, period drama cinematic hit, heritage accent",
+  },
+  cinematic: {
+    "reveal accent":       "cinematic reveal sting, dramatic orchestral hit, impactful discovery moment",
+    "tense pulse":         "cinematic suspense drone, dramatic atmosphere, tension pulse",
+    "precision tick":      "cinematic precision tick, dramatic sharp accent, film beat",
+    "mechanical transition": "cinematic whoosh, dramatic scene cut, powerful sweep",
+    "soft lift":           "cinematic emotional breath, gentle orchestral lift, film moment",
+    "cinematic accent":    "cinematic impact hit, dramatic orchestral accent, powerful film moment",
+  },
+};
+
+/**
+ * Returns the ElevenLabs SFX text prompt for a given genre + cue type.
+ * Falls back to the cinematic defaults when genre or cue type is not mapped.
+ */
+function buildAiSfxCuePrompt(genre = "cinematic", cueType = "cinematic accent") {
+  const genreMap = AI_SFX_PROMPTS[genre] || AI_SFX_PROMPTS.cinematic;
+  return genreMap[cueType] || AI_SFX_PROMPTS.cinematic[cueType] || "cinematic accent sound effect, impactful short hit";
+}
+
 function resolveGenerationType(overrides = {}) {
   if (overrides.type === "voice" || overrides.type === "music") {
     return overrides.type;
@@ -397,4 +517,7 @@ function invalidateAudioForScriptChange(audio = {}) {
 module.exports = {
   generateAudioStack,
   invalidateAudioForScriptChange,
+  detectProjectGenre,
+  buildAiSfxCuePrompt,
+  pickSceneAudioKeyword,
 };

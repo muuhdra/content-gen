@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, Sparkles } from "lucide-react";
 
 import { useEditorLab } from "@/features/editor-lab/editor-lab-context";
-import type { ClipMode, EffectModuleId, MotionStyle, KenBurnsIntensity } from "./effects-lab-preset";
+import { CardInfoHeader } from "@/features/editor-lab/components/CardInfoHeader";
+import type { ClipMode, EffectModuleId, MotionStyle, KenBurnsIntensity, EffectsLabPreset } from "./effects-lab-preset";
 
 type EffectModuleConfig = {
   id: EffectModuleId;
@@ -115,7 +116,7 @@ function ModuleCard({ module, active, onToggle, children }: ModuleCardProps) {
 
 export function EffectsLab() {
   const { effectsPreset, setEffectsPreset } = useEditorLab();
-  const { clipMode, motionStyle, kenBurnsIntensity, hybridAnimateRatio, moduleState, videoEndingDuration } = effectsPreset;
+  const { clipMode, motionStyle, kenBurnsIntensity, hybridAnimateRatio, moduleState, videoEndingDuration, budgetClips } = effectsPreset;
   const [previewProgress, setPreviewProgress] = useState(0);
 
   const activeModules = useMemo(() => {
@@ -204,14 +205,15 @@ export function EffectsLab() {
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_1fr] animate-in fade-in duration-500">
       <div className="space-y-5">
         <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-          <div className=" px-5 py-3.5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-              Effect Modules
-            </h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-              Turn on only the timing cues that improve pacing.
-            </p>
-          </div>
+          <CardInfoHeader
+            title="Effect Modules"
+            subtitle="Turn on only the timing cues that improve pacing."
+            info={<>
+              <p><span className="text-foreground font-bold">Reactive FX + SoundFXs</span> — Synchronise des accents visuels sur les moments forts du son. Le système détecte les impacts audio et renforce le mouvement à ces instants précis.</p>
+              <p><span className="text-foreground font-bold">Hook Effect</span> — Crée un effet d'accroche plus fort sur les premières secondes : légère rotation + zoom entrant pour capter l'attention immédiatement.</p>
+              <p><span className="text-foreground font-bold">Video Ending</span> — Applique un fondu progressif (opacité → 0) sur les dernières secondes. La durée contrôle à partir de quand le fondu commence avant la fin de la vidéo.</p>
+            </>}
+          />
           <CardContent className="space-y-4 p-3.5">
             <ModuleCard
               module={effectModules[0]}
@@ -257,14 +259,16 @@ export function EffectsLab() {
         </Card>
 
         <Card className="overflow-hidden rounded-none border border-border bg-card shadow-none">
-          <div className=" px-5 py-3.5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary font-display">
-              Motion Profile
-            </h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground font-mono">
-              Choose the base movement style for this project.
-            </p>
-          </div>
+          <CardInfoHeader
+            title="Motion Profile"
+            subtitle="Choose the base movement style for this project."
+            info={<>
+              <p><span className="text-foreground font-bold">Static (Ken Burns)</span> — Chaque scène = image fixe animée par un léger zoom/pan. Aucune génération vidéo IA, coût minimal. Idéal pour les projets à petit budget.</p>
+              <p><span className="text-foreground font-bold">Hybride</span> — ~40% des scènes les plus impactantes (hook, révélations, tension) sont animées par IA. Le reste en Ken Burns. Tu ajustes scène par scène à l'étape Motion. Bon équilibre qualité/coût.</p>
+              <p><span className="text-foreground font-bold">Full Vidéo</span> — Toutes les scènes en clips animés générés par IA. Rendu premium et fluide, mais coût le plus élevé.</p>
+              <p className="text-muted-foreground/50">Vertical Pan / Horizontal Pan / Zoom In-Out = style du mouvement Ken Burns appliqué aux plans statiques.</p>
+            </>}
+          />
           <CardContent className="space-y-4 p-3.5">
             <div className="flex items-center justify-between gap-1 rounded-none border border-border bg-background p-1">
               {([
@@ -337,7 +341,15 @@ export function EffectsLab() {
             {/* Ken Burns intensity — how much the still images move (static / hybrid scenes) */}
             {clipMode !== "video" && (
               <div className="space-y-2 border-t border-border pt-3">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 font-mono">Intensité du mouvement (Ken Burns)</p>
+                <CardInfoHeader
+                  title="Intensité Ken Burns"
+                  info={<>
+                    <p>Le <span className="text-foreground font-bold">Ken Burns</span> est un mouvement lent (zoom + panoramique) appliqué aux images statiques pour les rendre dynamiques sans générer de clip vidéo IA.</p>
+                    <p><span className="text-foreground font-bold">Subtil</span> — mouvement à peine perceptible, sobre, ton documentaire ou institutionnel.</p>
+                    <p><span className="text-foreground font-bold">Moyen</span> — équilibré, convient à la majorité des projets.</p>
+                    <p><span className="text-foreground font-bold">Marqué</span> — mouvement prononcé, plus d'énergie et de dynamisme, ton plus percutant.</p>
+                  </>}
+                />
                 <div className="flex items-center gap-1 rounded-none border border-border bg-background p-1">
                   {([
                     { id: "subtle", label: "Subtil" },
@@ -361,6 +373,39 @@ export function EffectsLab() {
                       ? "Mouvement prononcé — dynamique, plus d'énergie."
                       : "Équilibré — l'illustration respire sans distraire."}
                 </p>
+              </div>
+            )}
+
+            {/* Budget clips — only relevant when video clips are generated */}
+            {clipMode !== "static" && (
+              <div className="space-y-2 border-t border-border pt-3">
+                <CardInfoHeader
+                  title="Clips Courts"
+                  info={<>
+                    <p>Quand activé, chaque clip vidéo est généré à la <span className="text-foreground font-bold">durée minimum du modèle</span> (5s pour Kling/Wan/Seedance, 6s pour Hailuo) puis <span className="text-foreground font-bold">bouclé automatiquement</span> jusqu'à la durée exacte de la scène au moment de l'assemblage.</p>
+                    <p>Résultat : coût réduit d'environ 50% sur Kling (5s = $0.46 vs 10s = $0.92 par clip). La qualité du mouvement est identique — seule la durée brute du clip généré change.</p>
+                    <p className="text-muted-foreground/50">Désactive cette option uniquement si tu veux un mouvement continu sans boucle sur des scènes longues (8s+).</p>
+                  </>}
+                />
+                <div className="flex items-center justify-between gap-4 px-5 pb-2">
+                  <div className="space-y-1">
+                    <span className={`inline-block rounded-none px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.14em] font-mono ${budgetClips ? "bg-primary/20 text-primary" : "bg-border text-muted-foreground"}`}>
+                      {budgetClips ? "5s · budget" : "durée scène"}
+                    </span>
+                    <p className="max-w-52 text-[10px] leading-relaxed text-muted-foreground/50 font-mono">
+                      {budgetClips
+                        ? "Génère des clips de 5s et les boucle. Coût divisé par ~2 sur Kling."
+                        : "Génère un clip à la durée exacte de chaque scène. Plus fluide, plus cher."}
+                    </p>
+                  </div>
+                  <Switch
+                    className="data-[state=checked]:bg-primary"
+                    checked={budgetClips}
+                    onCheckedChange={(checked) =>
+                      setEffectsPreset((current: EffectsLabPreset) => ({ ...current, budgetClips: checked }))
+                    }
+                  />
+                </div>
               </div>
             )}
           </CardContent>
@@ -443,6 +488,14 @@ export function EffectsLab() {
                   >
                     {clipMode === "video" ? "Video clips" : "Static clips"}
                   </Badge>
+                  {clipMode !== "static" && budgetClips ? (
+                    <Badge
+                      variant="outline"
+                      className="border-primary/40 bg-primary/10 text-primary text-[7px] uppercase tracking-[0.18em] rounded-none font-mono"
+                    >
+                      5s · budget
+                    </Badge>
+                  ) : null}
                   {moduleState["hook-effect"] ? (
                     <Badge
                       variant="outline"
@@ -491,6 +544,16 @@ export function EffectsLab() {
             </Badge>
           </div>
           <CardContent className="space-y-3 p-3.5">
+            {clipMode !== "static" && budgetClips && (
+              <div className="rounded-none border border-primary/30 bg-primary/5 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-primary font-mono">
+                  Clips Courts · Budget
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-muted-foreground font-mono">
+                  Clips de 5s générés, bouclés à la durée de chaque scène. Coût ~50% moins cher.
+                </p>
+              </div>
+            )}
             {activeModules.length > 0 ? (
               activeModules.map((module) => (
                 <div
@@ -509,13 +572,13 @@ export function EffectsLab() {
                   </p>
                 </div>
               ))
-            ) : (
+            ) : clipMode === "static" || !budgetClips ? (
               <div className="rounded-none border border-dashed border-border bg-background px-4 py-4 text-center">
                 <p className="text-[11px] leading-relaxed text-muted-foreground font-mono">
                   No effect modules are active yet. Turn on a module on the left to shape pacing.
                 </p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       </div>

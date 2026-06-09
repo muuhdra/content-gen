@@ -10,7 +10,8 @@ import {
   Wand2,
   ArrowLeft,
   Save,
-  Mic
+  Mic,
+  Cpu,
 } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -32,6 +33,7 @@ import { defaultGraphicsLabPreset, type GraphicsLabPreset } from "@/features/edi
 import { EffectsLab } from "@/features/editor-lab/components/effect-lab/EffectsLab"
 import { defaultEffectsLabPreset, type EffectsLabPreset } from "@/features/editor-lab/components/effect-lab/effects-lab-preset"
 import { AudioLab } from "@/features/editor-lab/components/audio-lab/AudioLab"
+import { ModelsLab } from "@/features/editor-lab/components/models-lab/ModelsLab"
 import { defaultMusicLabPreset, type MusicLabPreset } from "@/features/editor-lab/components/audio-lab/music/music-lab-preset"
 import { defaultSoundsLabPreset, type SoundsLabPreset } from "@/features/editor-lab/components/audio-lab/sounds/sounds-lab-preset"
 import { CUSTOM_AUDIO_UPLOAD_ID, isCustomVoiceId } from "@/features/editor-lab/components/audio-lab/narration/voice-cloning-lab/voice-clone-storage"
@@ -41,7 +43,7 @@ import { buildProjectPayload } from "@/features/projects/utils/project-payload"
 import type { CaptionPosition } from "@/features/editor-lab/components/caption-lab/caption-lab-preset"
 
 
-const editorLabTabs = ["visuals", "captions", "effects", "audio"] as const;
+const editorLabTabs = ["visuals", "captions", "effects", "audio", "models"] as const;
 const editorLabOrigins = ["setup", "templates", "production", "project"] as const;
 
 type EditorLabTab = (typeof editorLabTabs)[number];
@@ -73,6 +75,7 @@ type EffectsPresetInput = Partial<EffectsLabPreset> | {
   hybridAnimateRatio?: number;
   moduleState?: Record<string, boolean>;
   videoEndingDuration?: number;
+  budgetClips?: boolean;
 } | null | undefined;
 
 type MusicPresetInput = Partial<MusicLabPreset> | {
@@ -94,6 +97,7 @@ type MusicPresetInput = Partial<MusicLabPreset> | {
 
 type SoundsPresetInput = Partial<SoundsLabPreset> | {
   enabled?: boolean;
+  aiSfx?: boolean;
   density?: string;
   cueFocus?: string[];
   cues?: string[];
@@ -259,6 +263,10 @@ function normalizeSoundsPreset(input?: SoundsPresetInput): SoundsLabPreset {
       typeof input?.enabled === "boolean"
         ? input.enabled
         : defaultSoundsLabPreset.enabled,
+    aiSfx:
+      typeof input?.aiSfx === "boolean"
+        ? input.aiSfx
+        : defaultSoundsLabPreset.aiSfx,
     density:
       input?.density === "none" || input?.density === "light" || input?.density === "dense" || input?.density === "medium"
         ? input.density
@@ -685,10 +693,11 @@ function EditorLabContent() {
             <div className="flex justify-center">
               <TabsList className="bg-background border border-border p-1 h-auto rounded-none overflow-x-auto no-scrollbar inline-flex gap-1">
                 {[
-                  { id: 'visuals', label: 'Visuals Lab', icon: ImageIcon },
-                  { id: 'captions', label: 'Captions Lab', icon: FileText },
-                  { id: 'effects', label: 'Effects Lab', icon: Wand2 },
-                  { id: 'audio', label: 'Audio Lab', icon: Mic },
+                  { id: 'visuals',  label: 'Visuals Lab',  icon: ImageIcon },
+                  { id: 'captions', label: 'Captions Lab', icon: FileText  },
+                  { id: 'effects',  label: 'Effects Lab',  icon: Wand2     },
+                  { id: 'audio',    label: 'Audio Lab',    icon: Mic       },
+                  { id: 'models',   label: 'AI Models',    icon: Cpu       },
                 ].map((tab) => (
                   <TabsTrigger
                     key={tab.id}
@@ -718,6 +727,10 @@ function EditorLabContent() {
 
             <TabsContent value="audio" className="outline-none pt-1">
               {activeTab === "audio" ? <AudioLab /> : null}
+            </TabsContent>
+
+            <TabsContent value="models" className="outline-none pt-1">
+              {activeTab === "models" ? <ModelsLab /> : null}
             </TabsContent>
 
           </Tabs>

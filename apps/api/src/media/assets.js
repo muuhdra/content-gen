@@ -14,6 +14,11 @@ const {
   findMatchingMotionGraphicRef,
   buildMotionGraphicImagePrompt,
 } = require("@cosyl/agents/motionGraphic");
+const {
+  detectProjectGenre,
+  buildAiSfxCuePrompt,
+  pickSceneAudioKeyword,
+} = require("../projects/audio-generator");
 
 const execFileAsync = promisify(execFile);
 const generatedMediaRoot = path.join(dataRoot, "generated-media");
@@ -486,7 +491,17 @@ async function ensureVideoVariantAsset({ project, scene, variant, imageVariant }
   const outputDir = path.join(generatedMediaRoot, "videos", sanitizeFileSegment(project.id));
   const baseName = sanitizeFileSegment(`${variant.id || `${project.id}-scene-${scene.sceneId}-video`}-${createVideoVariantFingerprint(variant, imageVariant)}`);
   const mp4Path = path.join(outputDir, `${baseName}.mp4`);
-  const durationSeconds = Math.max(4, Math.min(12, Math.round(scene.duration || 6)));
+
+  // Budget clips: generate the shortest valid clip for the selected model and let
+  // compose.js loop it to the full scene duration (-stream_loop -1 -t sceneDuration).
+  // Enabled by default (budgetClips: true). Cuts cost ~50% on Kling (5s vs 10s).
+  const isBudget = project.settings?.effects?.budgetClips !== false;
+  const videoModelKey = project.settings?.videoAgentModel || MODEL_CONFIG.video.default;
+  const modelConfig = MODEL_CONFIG.video.providers[videoModelKey];
+  const sceneDuration = Math.max(4, Math.min(12, Math.round(scene.duration || 6)));
+  const durationSeconds = isBudget && modelConfig?.shortClipSeconds
+    ? modelConfig.shortClipSeconds
+    : sceneDuration;
 
   await fs.mkdir(outputDir, { recursive: true });
 
@@ -1004,6 +1019,130 @@ async function ensureGeneratedMusicAsset({ project, audio }) {
   };
 }
 
+// ─── AI SFX: per-scene cue scheduler ─────────────────────────────────────────
+// Returns { cueType, offset, duration } for each scene that should receive a cue,
+// respecting the density and cueFocus settings.
+
+function scheduleSfxCues(project = {}, sfx = {}) {
+  const scenes = Array.isArray(project.scenes) ? project.scenes : [];
+  const density = String(sfx.density || "medium").toLowerCase();
+  const cueFocus = Array.isArray(sfx.cueFocus) ? sfx.cueFocus : (Array.isArray(sfx.cues) ? sfx.cues : []);
+  const skipScene = density === "none";
+
+  const CUE_DURATION = density === "dense" ? 2.5 : density === "light" ? 1.5 : 2.0;
+  const CUE_VOLUME = density === "dense" ? 0.35 : density === "light" ? 0.20 : 0.28;
+
+  let cursor = 0;
+  const scheduled = [];
+
+  for (const scene of scenes) {
+    const sceneDuration = Math.max(1, Number(scene?.duration) || 5);
+    if (!skipScene) {
+      const cueType = pickSceneAudioKeyword(scene);
+      // If cueFocus is set, only allow cues that loosely match a focus category
+      const focusMatch =
+        cueFocus.length === 0 ||
+        cueFocus.some((f) =>
+          cueType.includes(f) ||
+          f === "impact" && cueType.includes("reveal") ||
+          f === "transition" && (cueType.includes("mechanical") || cueType.includes("cinematic")) ||
+          f === "ambient" && cueType.includes("soft") ||
+          f === "whoosh" && cueType.includes("mechanical") ||
+          f === "notification" && cueType.includes("precision")
+        );
+
+      if (focusMatch) {
+        // Primary cue: offset ~18% into the scene (natural "landing" point)
+        scheduled.push({
+          cueType,
+          offset: cursor + Math.min(0.5, sceneDuration * 0.18),
+          duration: Math.min(CUE_DURATION, sceneDuration * 0.5),
+          volume: CUE_VOLUME,
+        });
+
+        // Dense mode: add a secondary tail cue at ~75% of the scene
+        if (density === "dense" && sceneDuration >= 3) {
+          scheduled.push({
+            cueType: "cinematic accent",
+            offset: cursor + Math.min(sceneDuration - 1, sceneDuration * 0.75),
+            duration: 1.5,
+            volume: CUE_VOLUME * 0.7,
+          });
+        }
+      }
+    }
+    cursor += sceneDuration;
+  }
+
+  return { scheduled, totalDuration: cursor };
+}
+
+// ─── AI SFX: mix cue MP3 files into a final M4A stem ─────────────────────────
+
+async function buildAiSfxStem({ cueFiles, totalDuration, outputPath }) {
+  // Each entry: { mp3Path, offset (s), volume }
+  const inputArgs = ["-f", "lavfi", "-i", `anullsrc=r=44100:cl=stereo:d=${totalDuration}`];
+  const filterParts = ["[0:a]volume=0.0001[base]"];
+
+  for (let i = 0; i < cueFiles.length; i++) {
+    const { mp3Path, offset, volume, duration } = cueFiles[i];
+    inputArgs.push("-i", mp3Path);
+    const startMs = Math.round(offset * 1000);
+    const fadeDur = Math.max(0.04, Math.min(0.2, duration * 0.1));
+    filterParts.push(
+      `[${i + 1}:a]volume=${volume},` +
+      `afade=t=in:st=0:d=${fadeDur},` +
+      `afade=t=out:st=${Math.max(0.01, duration - fadeDur)}:d=${fadeDur},` +
+      `adelay=${startMs}|${startMs}[cue${i}]`
+    );
+  }
+
+  const mixLabels = ["[base]", ...cueFiles.map((_, i) => `[cue${i}]`)].join("");
+  filterParts.push(`${mixLabels}amix=inputs=${cueFiles.length + 1}:normalize=0,volume=1.4[outa]`);
+
+  await execFileAsync("ffmpeg", [
+    "-y",
+    ...inputArgs,
+    "-filter_complex", filterParts.join(";"),
+    "-map", "[outa]",
+    "-t", String(totalDuration),
+    "-c:a", "aac", "-b:a", "192k",
+    outputPath,
+  ]);
+}
+
+// ─── Fallback: procedural sine SFX stem ──────────────────────────────────────
+
+async function buildProceduralSfxStem({ project, audio, outputPath, totalDuration }) {
+  const cueDescriptors = buildSfxCueDescriptors(project, audio);
+  const inputArgs = ["-f", "lavfi", "-i", `anullsrc=r=44100:cl=stereo:d=${totalDuration}`];
+  const filterParts = ["[0:a]volume=0.0001[base]"];
+
+  cueDescriptors.forEach((cue, index) => {
+    inputArgs.push("-f", "lavfi", "-i", `sine=frequency=${Math.round(cue.frequency)}:duration=${cue.duration}`);
+    filterParts.push(
+      `[${index + 1}:a]volume=${cue.volume},` +
+      `afade=t=in:st=0:d=0.02,` +
+      `afade=t=out:st=${Math.max(0.01, cue.duration - 0.04)}:d=0.04,` +
+      `adelay=${Math.round(cue.start * 1000)}|${Math.round(cue.start * 1000)}[cue${index}]`
+    );
+  });
+
+  const mixInputs = ["[base]", ...cueDescriptors.map((_, index) => `[cue${index}]`)].join("");
+  filterParts.push(`${mixInputs}amix=inputs=${cueDescriptors.length + 1}:normalize=0,volume=1.3[outa]`);
+
+  await execFileAsync("ffmpeg", [
+    "-y",
+    ...inputArgs,
+    "-filter_complex", filterParts.join(";"),
+    "-map", "[outa]",
+    "-c:a", "aac", "-b:a", "192k",
+    outputPath,
+  ]);
+}
+
+// ─── Main SFX asset generator ─────────────────────────────────────────────────
+
 async function ensureGeneratedSfxAsset({ project, audio }) {
   const sfx = audio?.sfx || {};
 
@@ -1027,45 +1166,50 @@ async function ensureGeneratedSfxAsset({ project, audio }) {
   await fs.mkdir(outputDir, { recursive: true });
 
   if (!await fileExists(m4aPath)) {
-    const cueDescriptors = buildSfxCueDescriptors(project, audio);
-    const inputArgs = [
-      "-f",
-      "lavfi",
-      "-i",
-      `anullsrc=r=44100:cl=stereo:d=${totalDuration}`,
-    ];
-    const filterParts = [
-      "[0:a]volume=0.0001[base]",
-    ];
+    const useAiSfx = sfx.aiSfx !== false && aimlapi.isAvailable();
 
-    cueDescriptors.forEach((cue, index) => {
-      inputArgs.push(
-        "-f",
-        "lavfi",
-        "-i",
-        `sine=frequency=${Math.round(cue.frequency)}:duration=${cue.duration}`,
-      );
-      filterParts.push(
-        `[${index + 1}:a]volume=${cue.volume},afade=t=in:st=0:d=0.02,afade=t=out:st=${Math.max(0.01, cue.duration - 0.04)}:d=0.04,adelay=${Math.round(cue.start * 1000)}|${Math.round(cue.start * 1000)}[cue${index}]`
-      );
-    });
+    if (useAiSfx) {
+      // ── Production path: per-scene AI cues via ElevenLabs Sound Effects ────
+      const genre = detectProjectGenre(project);
+      const { scheduled } = scheduleSfxCues(project, sfx);
+      const tempDir = path.join(outputDir, `sfx-tmp-${fingerprint}`);
+      await fs.mkdir(tempDir, { recursive: true });
 
-    const mixInputs = ["[base]", ...cueDescriptors.map((_, index) => `[cue${index}]`)].join("");
-    filterParts.push(`${mixInputs}amix=inputs=${cueDescriptors.length + 1}:normalize=0,volume=1.3[outa]`);
+      const cueFiles = [];
+      try {
+        for (let i = 0; i < scheduled.length; i++) {
+          const cue = scheduled[i];
+          const sfxPrompt = buildAiSfxCuePrompt(genre, cue.cueType);
+          let mp3Buffer;
+          try {
+            mp3Buffer = await aimlapi.generateSoundEffect({
+              prompt: sfxPrompt,
+              durationSeconds: cue.duration,
+              promptInfluence: 0.6,
+            });
+          } catch {
+            // If one cue fails, skip it silently — partial SFX is better than none
+            continue;
+          }
+          const cuePath = path.join(tempDir, `cue-${i}.mp3`);
+          await fs.writeFile(cuePath, mp3Buffer);
+          cueFiles.push({ mp3Path: cuePath, offset: cue.offset, volume: cue.volume, duration: cue.duration });
+        }
 
-    await execFileAsync("ffmpeg", [
-      "-y",
-      ...inputArgs,
-      "-filter_complex",
-      filterParts.join(";"),
-      "-map",
-      "[outa]",
-      "-c:a",
-      "aac",
-      "-b:a",
-      "192k",
-      m4aPath,
-    ]);
+        if (cueFiles.length > 0) {
+          await buildAiSfxStem({ cueFiles, totalDuration, outputPath: m4aPath });
+        } else {
+          // All cue calls failed → fall through to procedural
+          await buildProceduralSfxStem({ project, audio, outputPath: m4aPath, totalDuration });
+        }
+      } finally {
+        // Cleanup temp cue MP3s
+        await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      }
+    } else {
+      // ── Dev / fallback path: procedural FFmpeg sine generator ───────────────
+      await buildProceduralSfxStem({ project, audio, outputPath: m4aPath, totalDuration });
+    }
   }
 
   const stats = await fs.stat(m4aPath);
