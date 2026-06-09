@@ -15,12 +15,12 @@ import {
   uploadProjectReferenceAsset,
   type ProjectReferenceAsset,
 } from "@/lib/projects-api";
-import { Box, ImageIcon, MapPin, Palette, Search, Trash2, Upload, User, X, Film, PlayCircle as Youtube, Sparkles, Wand2 } from "lucide-react";
+import { Box, ImageIcon, Map, MapPin, Palette, Search, Trash2, Upload, User, X, Film, PlayCircle as Youtube, Sparkles, Wand2 } from "lucide-react";
 import { writeProjectDraft } from "@/features/projects/utils/project-draft";
 
 import { useEditorLab } from "@/features/editor-lab/editor-lab-context";
 
-type VisualReferenceLabel = "Character" | "Scene" | "Object" | "Style";
+type VisualReferenceLabel = "Character" | "Scene" | "Object" | "Style" | "Map";
 
 type VisualReference = {
   id: string;
@@ -31,7 +31,7 @@ type VisualReference = {
   storagePath?: string | null;
 };
 
-const labelOptions: VisualReferenceLabel[] = ["Character", "Scene", "Object", "Style"];
+const labelOptions: VisualReferenceLabel[] = ["Character", "Scene", "Object", "Style", "Map"];
 
 const stylePresets = [
   "Cinematic lighting",
@@ -96,6 +96,8 @@ function toVisualLabel(label?: ProjectReferenceAsset["label"] | string | null): 
       return "Scene";
     case "object":
       return "Object";
+    case "map-motion":
+      return "Map";
     case "style":
     default:
       return "Style";
@@ -110,6 +112,8 @@ function toAssetLabel(label: VisualReferenceLabel): ProjectReferenceAsset["label
       return "scene";
     case "Object":
       return "object";
+    case "Map":
+      return "map-motion";
     case "Style":
     default:
       return "style";
@@ -120,6 +124,7 @@ function getReferenceIcon(label: VisualReferenceLabel) {
   if (label === "Character") return User;
   if (label === "Scene") return MapPin;
   if (label === "Object") return Box;
+  if (label === "Map") return Map;
   return Palette;
 }
 
@@ -134,7 +139,7 @@ export function VisualsLab() {
     setReferences,
     narrationStyle,
   } = useEditorLab();
-  const [referenceFilter, setReferenceFilter] = useState<"All" | VisualReferenceLabel>("All");
+  const [referenceFilter, setReferenceFilter] = useState<"All" | VisualReferenceLabel | "map-motion">("All");
   const [referenceQuery, setReferenceQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 

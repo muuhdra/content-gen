@@ -249,29 +249,48 @@ async function findCachedApprovedImagePath(project, scene) {
 /**
  * Collect the reference images that should LOCK a scene's look:
  *   1. Editor LAB "style" references — the locked visual directive (always).
- *   2. Subject references (character/scene/object) the scene's text mentions.
- *   3. The previous scene's approved image — visual continuity (if cached).
- * Returns Base64 data URLs (capped). Never throws — locking is best-effort.
+ *   2. Map-motion references — injected ONLY when the scene has a geoLocation,
+ *      using up to 3 frames from the uploaded animated-map video to anchor the
+ *      cartographic visual style for that scene.
+ *   3. Subject references (character/scene/object) the scene's text mentions.
+ *   4. The previous scene's approved image — visual continuity (if cached).
+ * Returns Base64 data URLs (capped at MAX_REFERENCE_IMAGES). Never throws.
  */
 async function collectSceneReferenceDataUrls({ project, scene }) {
   const references = Array.isArray(project?.references) ? project.references : [];
   const usable = references.filter((r) => r && (r.storagePath || r.kind === "reference-youtube"));
 
   const styleRefs = usable.filter((r) => r.label === "style");
+  // Map-motion refs are only relevant when the scene has an explicit location.
+  const hasGeoLocation = typeof scene?.geoLocation === "string" && scene.geoLocation.trim().length > 0;
+  const mapRefs = hasGeoLocation ? usable.filter((r) => r.label === "map-motion") : [];
   const sceneTokens = new Set([...tokenizeForMatch(scene?.narration), ...tokenizeForMatch(scene?.visualIntent)]);
   const subjectRefs = usable.filter(
-    (r) => r.label !== "style" && tokenizeForMatch(r.name).some((t) => sceneTokens.has(t)),
+    (r) => r.label !== "style" && r.label !== "map-motion" && tokenizeForMatch(r.name).some((t) => sceneTokens.has(t)),
   );
 
   const dataUrls = [];
 
-  // Each reference → image(s): stills directly, video clips / motion design as a
-  // single extracted frame, YouTube as its thumbnail. Order: locked style first,
-  // previous-scene continuity, then matched subjects.
+  // Each reference → image(s): stills directly, video clips / motion design as
+  // extracted frames, YouTube as its thumbnail.
+  // Order: locked style → map style (geo scenes only) → continuity → subjects.
   for (const ref of styleRefs) {
     if (dataUrls.length >= MAX_REFERENCE_IMAGES) break;
     const urls = await referenceToImageUrls(ref, { maxFrames: 1 });
     if (urls[0]) dataUrls.push(urls[0]);
+  }
+
+  // Map-motion: extract up to 3 representative frames from the reference video
+  // so the image model sees the cartographic motion-design style.
+  for (const ref of mapRefs) {
+    if (dataUrls.length >= MAX_REFERENCE_IMAGES) break;
+    try {
+      const urls = await referenceToImageUrls(ref, { maxFrames: 3 });
+      for (const url of urls) {
+        if (dataUrls.length >= MAX_REFERENCE_IMAGES) break;
+        dataUrls.push(url);
+      }
+    } catch { /* best-effort */ }
   }
 
   const prevScene = (project?.scenes || []).find((s) => s.sceneId === (scene?.sceneId || 0) - 1);
@@ -292,6 +311,24 @@ async function collectSceneReferenceDataUrls({ project, scene }) {
   return dataUrls;
 }
 
+/**
+ * Build the image generation prompt for a map-motion scene.
+ * When the project has map-motion references AND the scene has a geoLocation,
+ * we override the standard scene illustration with a map graphic description.
+ * The reference frames (passed separately as imageUrls) anchor the visual style.
+ */
+function buildMapImagePrompt(location, baseStyleBrief = "") {
+  const styleSuffix = baseStyleBrief ? ` Style reference: ${baseStyleBrief.slice(0, 300)}.` : "";
+  return [
+    `Motion graphic map visualization of ${location}.`,
+    "Animated cartographic design: clean geographic map with the target region highlighted,",
+    "smooth zoom/flyover framing centered on the location, stylized terrain or urban boundaries,",
+    "place name label or marker pin, motion-design aesthetic with elegant animation cues.",
+    "No photorealistic photography — this is a graphic / illustrated map visual.",
+    styleSuffix,
+  ].filter(Boolean).join(" ");
+}
+
 async function downloadBuffer(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Image download failed (${res.status}): ${url}`);
@@ -310,8 +347,19 @@ async function generateImageViaAIML(variant, project, pngPath, scene = null) {
   // Inject the reverse-engineered style brief (from analyzing the uploaded style
   // references) as a LOCKED directive on every scene — the consistency backbone.
   const styleBrief = typeof project.settings?.styleBrief === "string" ? project.settings.styleBrief.trim() : "";
-  const styleSuffix = styleBrief ? ` LOCKED STYLE DIRECTIVE (match exactly across every scene): ${styleBrief}` : "";
-  const prompt = `${variant.prompt}${styleSuffix} ${IMAGE_NEGATIVE_CLAUSE}`;
+
+  // Map-motion override: when the scene has a geoLocation AND the project has
+  // at least one map-motion reference, replace the standard illustration prompt
+  // with a cartographic motion-graphic description anchored on the reference frames.
+  const hasGeoLocation = typeof scene?.geoLocation === "string" && scene.geoLocation.trim().length > 0;
+  const references = Array.isArray(project?.references) ? project.references : [];
+  const hasMapRef = references.some((r) => r?.label === "map-motion");
+  const isMapScene = hasGeoLocation && hasMapRef;
+
+  const basePrompt = isMapScene
+    ? buildMapImagePrompt(scene.geoLocation, styleBrief)
+    : `${variant.prompt}${styleBrief ? ` LOCKED STYLE DIRECTIVE (match exactly across every scene): ${styleBrief}` : ""}`;
+  const prompt = `${basePrompt} ${IMAGE_NEGATIVE_CLAUSE}`;
 
   // Reference-conditioned path: when the scene has locked references (Editor LAB
   // style + subjects + previous-scene continuity), route through Gemini's edit

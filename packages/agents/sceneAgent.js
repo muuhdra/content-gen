@@ -200,7 +200,7 @@ function buildReferenceGuidance(project, block, visualStyle) {
   return `Reference anchors to preserve when relevant: ${buildReferenceDirective(anchors)}.`;
 }
 
-function createSceneFromBlock(block, index, project, totalScenes, visualOverride = "") {
+function createSceneFromBlock(block, index, project, totalScenes, visualOverride = "", locationOverride = null) {
   const slideshow = isSlideshowProject(project);
   const wordCount = countWords(block);
   const duration = project.type.toLowerCase().includes("short")
@@ -240,6 +240,10 @@ function createSceneFromBlock(block, index, project, totalScenes, visualOverride
     pauseDuration,
     // Hybrid render mode: "animate" → generate a motion clip; "static" → Ken Burns image only.
     motionMode: resolveSceneMotionMode(index, totalScenes, project),
+    // Geographic location detected in this scene's narration. When set, the
+    // render pipeline can generate a map motion graphic for this scene instead
+    // of (or in addition to) the standard image→video flow.
+    geoLocation: locationOverride ?? extractGeoLocation(block),
     approvedImageId: null,
     imageVariants: [],
     approvedVideoId: null,
@@ -270,12 +274,13 @@ Break the script into an ordered sequence of visual scenes (one clear visual bea
 For EACH scene return:
 - "narration": the EXACT span of the script for that beat, verbatim and in order. Concatenated across all scenes, the narration must reconstruct the full script with no gaps, overlaps or rewording.
 - "visual": a CONCRETE, filmable description of what we SEE on screen — main subject, setting/environment, action, mood and key props. TRANSLATE abstract narration into something a concept artist could draw (e.g. "regulation shaping decisions" → "officials in a marble government hall reviewing documents, a gavel on the desk, corporate logos on a screen"). Describe the IMAGE, do NOT restate the narration. Keep narration language as ${language}, but write the visual in English.
+- "location": if the narration explicitly mentions a specific geographic place (city, country, region, neighborhood, continent, etc.), return it as a short English string like "Paris, France" or "Lagos, Nigeria". If there is no clear geographic reference, return null.
 
 RULES:
 - Keep scenes in script order; do not invent narration that isn't in the script.
 - One scene per natural visual beat — split long paragraphs into distinct visuals when the imagery changes.
 - Output ONLY valid JSON, no markdown, no commentary:
-{"scenes":[{"narration":"...","visual":"..."}]}`;
+{"scenes":[{"narration":"...","visual":"...","location":null}]}`;
 }
 
 function buildStoryboardUserPrompt(project) {
@@ -302,6 +307,8 @@ function parseStoryboardScenes(text) {
       .map((scene) => ({
         narration: typeof scene?.narration === "string" ? scene.narration.trim() : "",
         visual: typeof scene?.visual === "string" ? scene.visual.trim() : "",
+        // location is optional — null when not mentioned in the narration.
+        location: typeof scene?.location === "string" && scene.location.trim() ? scene.location.trim() : null,
       }))
       .filter((scene) => scene.narration.length > 0);
 
@@ -309,6 +316,37 @@ function parseStoryboardScenes(text) {
   } catch {
     return null;
   }
+}
+
+// ── Geo-location extraction (deterministic fallback) ─────────────────────────
+// Best-effort regex that catches common patterns when the LLM storyboard is not
+// available (no key / quota) or did not return a location for a scene. Returns
+// the raw matched phrase so the caller can use it as-is in prompts.
+
+// Sentence-level connectors that introduce a place (EN + FR).
+// Capture only sequences of capitalized words (proper nouns) to avoid
+// dragging in the rest of the sentence (e.g. "au Cameroun qui a tout").
+const GEO_PREP_PATTERN = /\b(?:in|at|from|to|near|across|through|into|over|above|around|dans|en|au|aux|à|de|vers|sur|par)\s+([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][A-Za-zÀ-ÖØ-öø-ÿ\-']+(?:,?\s+[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][A-Za-zÀ-ÖØ-öø-ÿ\-']+){0,4})/g;
+
+// Named geographic proper nouns we want to catch even without a preposition.
+const GEO_STANDALONE_PATTERN = /\b(Africa|Europe|Asia|Americas?|Australia|Océanie|Middle East|Moyen[- ]Orient|Sub[- ]Saharan|Sahara|Sahel)\b/i;
+
+function extractGeoLocation(narration) {
+  const text = String(narration || "");
+
+  // 1. Preposition-anchored patterns ("in Paris", "au Cameroun", "à Lagos")
+  GEO_PREP_PATTERN.lastIndex = 0;
+  const prepMatch = GEO_PREP_PATTERN.exec(text);
+  if (prepMatch) {
+    // Regex already stops at lowercase words — just trim trailing whitespace/comma.
+    return prepMatch[1].replace(/[,\s]+$/, "").trim();
+  }
+
+  // 2. Standalone continent / major region names
+  const standaloneMatch = text.match(GEO_STANDALONE_PATTERN);
+  if (standaloneMatch) return standaloneMatch[0];
+
+  return null;
 }
 
 async function runStoryboardLLM(project) {
@@ -337,7 +375,7 @@ async function runSceneAgent(project) {
   if (storyboard && storyboard.length > 0) {
     usedLLM = true;
     scenes = storyboard.map((beat, index) =>
-      createSceneFromBlock(beat.narration, index, project, storyboard.length, beat.visual)
+      createSceneFromBlock(beat.narration, index, project, storyboard.length, beat.visual, beat.location ?? null)
     );
   } else {
     // 2. Deterministic fallback — split + template visuals (no LLM key / failure).

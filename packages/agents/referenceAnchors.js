@@ -45,6 +45,19 @@ function getLabelSemanticTokens(label) {
     return ["object", "prop", "vehicle", "device", "artifact", "product"];
   }
 
+  // map-motion references anchor the cartographic / animated-map visual style.
+  // They are only surfaced for scenes that mention a geographic location — see
+  // collectSceneReferenceDataUrls in assets.js for the injection gate.
+  if (label === "map-motion") {
+    return [
+      "map", "maps", "mapping", "geographic", "geography", "cartographic",
+      "country", "city", "town", "village", "region", "territory", "district",
+      "continent", "nation", "border", "capital", "province", "state",
+      "location", "place", "area", "zone", "quarter", "neighborhood",
+      "africa", "europe", "asia", "america", "australia", "france", "paris",
+    ];
+  }
+
   return ["style", "lighting", "palette", "texture", "mood", "composition", "atmosphere"];
 }
 

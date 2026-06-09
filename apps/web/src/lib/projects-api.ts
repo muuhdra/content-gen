@@ -30,7 +30,7 @@ export type ProjectReferenceAsset = {
   id: string;
   name: string;
   kind: "reference-image" | "reference-video" | "reference-youtube";
-  label: "character" | "scene" | "style" | "object";
+  label: "character" | "scene" | "style" | "object" | "map-motion";
   scopeId?: string | null;
   preview?: string | null;
   storagePath?: string | null;
