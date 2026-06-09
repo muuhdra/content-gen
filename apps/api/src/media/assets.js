@@ -10,6 +10,10 @@ const { MODEL_CONFIG } = require("@cosyl/config/models");
 const { sanitizeFileSegment, formatFileSize } = require("../lib/files");
 const { dataRoot } = require("../lib/paths");
 const { referenceToImageUrls } = require("./reference-frames");
+const {
+  findMatchingMotionGraphicRef,
+  buildMotionGraphicImagePrompt,
+} = require("@cosyl/agents/motionGraphic");
 
 const execFileAsync = promisify(execFile);
 const generatedMediaRoot = path.join(dataRoot, "generated-media");
@@ -261,31 +265,34 @@ async function collectSceneReferenceDataUrls({ project, scene }) {
   const usable = references.filter((r) => r && (r.storagePath || r.kind === "reference-youtube"));
 
   const styleRefs = usable.filter((r) => r.label === "style");
-  // Map-motion refs are only relevant when the scene has an explicit location.
-  const hasGeoLocation = typeof scene?.geoLocation === "string" && scene.geoLocation.trim().length > 0;
-  const mapRefs = hasGeoLocation ? usable.filter((r) => r.label === "map-motion") : [];
+  // Motion-graphic refs: only inject for scenes that semantically match the
+  // reference (geo-location for maps, stats for data, dates for timeline, etc.)
+  // via doesSceneMatchMotionGraphic in findMatchingMotionGraphicRef.
+  const matchedMgRef = findMatchingMotionGraphicRef(scene, project);
+  const mgRef = matchedMgRef
+    ? usable.find((r) => r.label === "motion-graphic" && r.id === matchedMgRef.id) || matchedMgRef
+    : null;
   const sceneTokens = new Set([...tokenizeForMatch(scene?.narration), ...tokenizeForMatch(scene?.visualIntent)]);
   const subjectRefs = usable.filter(
-    (r) => r.label !== "style" && r.label !== "map-motion" && tokenizeForMatch(r.name).some((t) => sceneTokens.has(t)),
+    (r) => r.label !== "style" && r.label !== "motion-graphic" && tokenizeForMatch(r.name).some((t) => sceneTokens.has(t)),
   );
 
   const dataUrls = [];
 
   // Each reference → image(s): stills directly, video clips / motion design as
   // extracted frames, YouTube as its thumbnail.
-  // Order: locked style → map style (geo scenes only) → continuity → subjects.
+  // Order: locked style → motion-graphic (matched scenes only) → continuity → subjects.
   for (const ref of styleRefs) {
     if (dataUrls.length >= MAX_REFERENCE_IMAGES) break;
     const urls = await referenceToImageUrls(ref, { maxFrames: 1 });
     if (urls[0]) dataUrls.push(urls[0]);
   }
 
-  // Map-motion: extract up to 3 representative frames from the reference video
-  // so the image model sees the cartographic motion-design style.
-  for (const ref of mapRefs) {
-    if (dataUrls.length >= MAX_REFERENCE_IMAGES) break;
+  // Motion-graphic: extract up to 3 representative frames so the image model
+  // sees the motion-design style (map, data viz, timeline, diagram…).
+  if (mgRef) {
     try {
-      const urls = await referenceToImageUrls(ref, { maxFrames: 3 });
+      const urls = await referenceToImageUrls(mgRef, { maxFrames: 3 });
       for (const url of urls) {
         if (dataUrls.length >= MAX_REFERENCE_IMAGES) break;
         dataUrls.push(url);
@@ -311,24 +318,6 @@ async function collectSceneReferenceDataUrls({ project, scene }) {
   return dataUrls;
 }
 
-/**
- * Build the image generation prompt for a map-motion scene.
- * When the project has map-motion references AND the scene has a geoLocation,
- * we override the standard scene illustration with a map graphic description.
- * The reference frames (passed separately as imageUrls) anchor the visual style.
- */
-function buildMapImagePrompt(location, baseStyleBrief = "") {
-  const styleSuffix = baseStyleBrief ? ` Style reference: ${baseStyleBrief.slice(0, 300)}.` : "";
-  return [
-    `Motion graphic map visualization of ${location}.`,
-    "Animated cartographic design: clean geographic map with the target region highlighted,",
-    "smooth zoom/flyover framing centered on the location, stylized terrain or urban boundaries,",
-    "place name label or marker pin, motion-design aesthetic with elegant animation cues.",
-    "No photorealistic photography — this is a graphic / illustrated map visual.",
-    styleSuffix,
-  ].filter(Boolean).join(" ");
-}
-
 async function downloadBuffer(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Image download failed (${res.status}): ${url}`);
@@ -348,16 +337,14 @@ async function generateImageViaAIML(variant, project, pngPath, scene = null) {
   // references) as a LOCKED directive on every scene — the consistency backbone.
   const styleBrief = typeof project.settings?.styleBrief === "string" ? project.settings.styleBrief.trim() : "";
 
-  // Map-motion override: when the scene has a geoLocation AND the project has
-  // at least one map-motion reference, replace the standard illustration prompt
-  // with a cartographic motion-graphic description anchored on the reference frames.
-  const hasGeoLocation = typeof scene?.geoLocation === "string" && scene.geoLocation.trim().length > 0;
-  const references = Array.isArray(project?.references) ? project.references : [];
-  const hasMapRef = references.some((r) => r?.label === "map-motion");
-  const isMapScene = hasGeoLocation && hasMapRef;
+  // Motion-graphic override: when the scene matches a motion-graphic reference
+  // (map → geo-location, data → stats, timeline → dates, diagram → process…),
+  // replace the standard illustration prompt with a type-aware motion-graphic
+  // description anchored on the reference frames (injected via imageUrls below).
+  const matchedMgRef = scene ? findMatchingMotionGraphicRef(scene, project) : null;
 
-  const basePrompt = isMapScene
-    ? buildMapImagePrompt(scene.geoLocation, styleBrief)
+  const basePrompt = matchedMgRef
+    ? buildMotionGraphicImagePrompt(scene, matchedMgRef, styleBrief)
     : `${variant.prompt}${styleBrief ? ` LOCKED STYLE DIRECTIVE (match exactly across every scene): ${styleBrief}` : ""}`;
   const prompt = `${basePrompt} ${IMAGE_NEGATIVE_CLAUSE}`;
 

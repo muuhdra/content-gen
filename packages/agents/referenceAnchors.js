@@ -45,16 +45,19 @@ function getLabelSemanticTokens(label) {
     return ["object", "prop", "vehicle", "device", "artifact", "product"];
   }
 
-  // map-motion references anchor the cartographic / animated-map visual style.
-  // They are only surfaced for scenes that mention a geographic location — see
-  // collectSceneReferenceDataUrls in assets.js for the injection gate.
-  if (label === "map-motion") {
+  // motion-graphic references anchor a type-specific visual style (map, data,
+  // timeline, diagram…). Scene injection is gated by doesSceneMatchMotionGraphic
+  // in motionGraphic.js — NOT by token overlap with the scene text.
+  if (label === "motion-graphic") {
     return [
-      "map", "maps", "mapping", "geographic", "geography", "cartographic",
-      "country", "city", "town", "village", "region", "territory", "district",
-      "continent", "nation", "border", "capital", "province", "state",
-      "location", "place", "area", "zone", "quarter", "neighborhood",
-      "africa", "europe", "asia", "america", "australia", "france", "paris",
+      // map / geo
+      "map", "geographic", "cartographic", "country", "city", "location", "region",
+      // data / stats
+      "chart", "graph", "data", "statistics", "percent", "counter", "infographic",
+      // timeline / history
+      "timeline", "history", "date", "chronology", "period", "decade",
+      // diagram / process
+      "diagram", "process", "flow", "step", "system", "workflow",
     ];
   }
 

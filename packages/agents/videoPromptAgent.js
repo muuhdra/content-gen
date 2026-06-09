@@ -4,6 +4,12 @@ const {
 } = require("./contracts");
 const { buildMotionVideoHandoff } = require("./productionHandoff");
 const { buildReferenceDirective, selectSceneReferenceAnchors } = require("./referenceAnchors");
+const {
+  findMatchingMotionGraphicRef,
+  buildMotionGraphicVideoPrompt,
+  getMotionGraphicVariantStyles,
+  detectMotionGraphicType,
+} = require("./motionGraphic");
 
 function analyzeCinematicContext(textContext) {
   const normalized = textContext.toLowerCase();
@@ -58,49 +64,7 @@ function buildReferenceMotionNote(project, scene, approvedImage) {
   return ` Preserve continuity with these image references when relevant: ${buildReferenceDirective(anchors)}.`;
 }
 
-// ── Map-motion scene detection ────────────────────────────────────────────────
-// Returns true when the scene has a geo-location AND the project carries at
-// least one map-motion reference — the two conditions that trigger the
-// cartographic override for both images and video prompts.
-function isMapMotionScene(scene, project) {
-  const hasGeo = typeof scene?.geoLocation === "string" && scene.geoLocation.trim().length > 0;
-  if (!hasGeo) return false;
-  const refs = Array.isArray(project?.references) ? project.references : [];
-  return refs.some((r) => r?.label === "map-motion");
-}
-
-// Builds the video motion prompt for an animated map scene.
-// Two variants: "Flyover" (zoom in, classic establishing) and "Reveal" (pan +
-// label appear animation) — both reference the cartographic style reference.
-function buildMapMotionPrompt(location, variantLabel, duration) {
-  const durationNote = duration ? `${duration}s clip` : "5-8s clip";
-  const baseMap = [
-    `MAP ANIMATION — ${variantLabel} variant.`,
-    `Location: ${location}.`,
-    "Motion graphic animated map: clean cartographic design, the target region/city highlighted",
-    "with a subtle pulse or pin-drop effect, geographic borders and terrain visible.",
-    "Color palette: editorial and restrained (navy, sand, white, or match reference style).",
-  ].join(" ");
-
-  if (variantLabel === "Flyover") {
-    return [
-      baseMap,
-      "Camera: smooth aerial zoom-in from continent/country level down to city/district level,",
-      "easing deceleration as the target fills the frame. No abrupt cuts.",
-      `Output spec: ${durationNote}, motion-design quality, no watermarks, no overlays.`,
-      "AUDIO: Silent footage only — no audio, no sound, no music, no speech (soundtrack mixed separately).",
-    ].join(" ");
-  }
-
-  // Reveal variant: horizontal pan + animated label
-  return [
-    baseMap,
-    "Camera: slow horizontal pan across the map, then settle on the target with a",
-    "location label or callout animating in (fade or slide-in), clean typographic treatment.",
-    `Output spec: ${durationNote}, motion-design quality, no watermarks, no overlays.`,
-    "AUDIO: Silent footage only — no audio, no sound, no music, no speech (soundtrack mixed separately).",
-  ].join(" ");
-}
+// Motion-graphic detection and prompt building are provided by ./motionGraphic.
 
 // Budget note: 2 variants per scene keeps generation cost low while still
 // offering a "safe" and a "creative" option for manual editing workflows.
@@ -109,9 +73,10 @@ function runVideoPromptAgent({ scene, project, count = 2 }) {
   const isSlideshow = (project.type || "").toLowerCase().includes("slideshow");
   const referenceNote = buildReferenceMotionNote(project, scene, approvedImage);
 
-  // Map-motion override: when the scene has a geoLocation + a map-motion
-  // reference exists, generate cartographic animation prompts instead.
-  const mapScene = isMapMotionScene(scene, project);
+  // Motion-graphic override: when a motion-graphic reference matches this scene
+  // (geo→map, stats→data, dates→timeline, process→diagram, or name tokens),
+  // generate type-specific animation variants instead of cinematic defaults.
+  const mgRef = findMatchingMotionGraphicRef(scene, project);
 
   // Contexte combiné de la scène : narration + image approuvée + signaux
   // utilisateur agnostiques à la langue (emotion/tone + visualStyle) pour que
@@ -139,7 +104,7 @@ function runVideoPromptAgent({ scene, project, count = 2 }) {
 
   // Adjust motion if it collides with previous motion (standard scenes only)
   let primaryMotion = inferred.motion;
-  if (!mapScene && primaryMotion === previousMotion) {
+  if (!mgRef && primaryMotion === previousMotion) {
     if (primaryMotion === "slow push-in") primaryMotion = "slow horizontal pan";
     else if (primaryMotion === "slow horizontal pan") primaryMotion = "subtle parallax zoom";
     else primaryMotion = "slow push-in";
@@ -153,12 +118,12 @@ function runVideoPromptAgent({ scene, project, count = 2 }) {
     timingNote = "ultra slow speed, dreamlike ambient flow";
   }
 
-  // Map-motion: 2 dedicated variants (Flyover + Reveal) override the standard
-  // cinematic variants when the scene is a geo-location scene.
-  const MAP_VARIANT_STYLES = [
-    { label: "Flyover", motion: "map zoom flyover", description: "Aerial zoom-in to the target location" },
-    { label: "Reveal",  motion: "map pan reveal",   description: "Pan + animated location label reveal" },
-  ];
+  // Motion-graphic: when a motion-graphic reference matches the scene,
+  // the module provides 2 type-specific variants (Flyover/Reveal for maps,
+  // Counter/Chart for data, Scroll/Zoom for timelines, Build/Flow for diagrams).
+  const mgVariantStyles = mgRef
+    ? getMotionGraphicVariantStyles(detectMotionGraphicType(mgRef.name || ""))
+    : null;
 
   // Variant 0 — "Signature" (primary inferred motion, safe and polished)
   // Variant 1 — "Dynamic" (contrasting motion, more editorial energy)
@@ -181,21 +146,21 @@ function runVideoPromptAgent({ scene, project, count = 2 }) {
   ];
 
   const variants = Array.from({ length: count }, (_, index) => {
-    // Map-motion scenes get dedicated cartographic variants.
-    if (mapScene) {
-      const mapStyle = MAP_VARIANT_STYLES[index] || MAP_VARIANT_STYLES[0];
+    // Motion-graphic scenes get type-specific variants (map, data, timeline, diagram…).
+    if (mgRef && mgVariantStyles) {
+      const mgStyle = mgVariantStyles[index] || mgVariantStyles[0];
       const duration = scene.duration ? `${scene.duration}s` : null;
-      const richPrompt = buildMapMotionPrompt(scene.geoLocation, mapStyle.label, duration);
+      const richPrompt = buildMotionGraphicVideoPrompt(scene, mgRef, mgStyle.label, duration);
+      const mgType = detectMotionGraphicType(mgRef.name || "");
       const variant = {
         id: createVideoVariantId(scene.id, index),
         variantIndex: index + 1,
         status: "pending",
         engine: project.settings?.videoAgentModel || "kling-3.0",
-        motion: mapStyle.motion,
+        motion: mgStyle.motion,
         energy: "cinematic",
-        previewTitle: `Map ${mapStyle.label}`,
+        previewTitle: `${mgType.charAt(0).toUpperCase() + mgType.slice(1)} ${mgStyle.label}`,
         prompt: richPrompt,
-        geoLocation: scene.geoLocation,
       };
       return {
         ...variant,

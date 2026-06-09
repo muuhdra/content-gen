@@ -4,6 +4,7 @@ const {
 } = require("./contracts");
 const { buildSceneGenerationHandoff } = require("./productionHandoff");
 const { buildReferenceDirective, selectSceneReferenceAnchors } = require("./referenceAnchors");
+const { extractGeoLocation } = require("./motionGraphic");
 const aimlapi = require("./llm/aimlapi");
 
 const STORYBOARD_MODEL = "claude-sonnet-4-6";
@@ -318,36 +319,7 @@ function parseStoryboardScenes(text) {
   }
 }
 
-// ── Geo-location extraction (deterministic fallback) ─────────────────────────
-// Best-effort regex that catches common patterns when the LLM storyboard is not
-// available (no key / quota) or did not return a location for a scene. Returns
-// the raw matched phrase so the caller can use it as-is in prompts.
-
-// Sentence-level connectors that introduce a place (EN + FR).
-// Capture only sequences of capitalized words (proper nouns) to avoid
-// dragging in the rest of the sentence (e.g. "au Cameroun qui a tout").
-const GEO_PREP_PATTERN = /\b(?:in|at|from|to|near|across|through|into|over|above|around|dans|en|au|aux|à|de|vers|sur|par)\s+([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][A-Za-zÀ-ÖØ-öø-ÿ\-']+(?:,?\s+[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ][A-Za-zÀ-ÖØ-öø-ÿ\-']+){0,4})/g;
-
-// Named geographic proper nouns we want to catch even without a preposition.
-const GEO_STANDALONE_PATTERN = /\b(Africa|Europe|Asia|Americas?|Australia|Océanie|Middle East|Moyen[- ]Orient|Sub[- ]Saharan|Sahara|Sahel)\b/i;
-
-function extractGeoLocation(narration) {
-  const text = String(narration || "");
-
-  // 1. Preposition-anchored patterns ("in Paris", "au Cameroun", "à Lagos")
-  GEO_PREP_PATTERN.lastIndex = 0;
-  const prepMatch = GEO_PREP_PATTERN.exec(text);
-  if (prepMatch) {
-    // Regex already stops at lowercase words — just trim trailing whitespace/comma.
-    return prepMatch[1].replace(/[,\s]+$/, "").trim();
-  }
-
-  // 2. Standalone continent / major region names
-  const standaloneMatch = text.match(GEO_STANDALONE_PATTERN);
-  if (standaloneMatch) return standaloneMatch[0];
-
-  return null;
-}
+// extractGeoLocation is provided by ./motionGraphic (shared module).
 
 async function runStoryboardLLM(project) {
   try {
